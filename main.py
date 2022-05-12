@@ -1,6 +1,7 @@
 import pyglet
 from pyglet.graphics import Batch
 from enum import Enum
+import os
 
 
 class Direction(Enum):
@@ -17,32 +18,67 @@ class Direction(Enum):
     CLOCKWISE = 20
     COUNTERCLOCKWISE = 21
 
+    VERTICAL = 30
+    HORIZONTAL = 31
+
+    VOID = 40
+
 
 class RectangularObject:
-    def __init__(self, x: float, y: float, width: float, height: float, color: tuple, batch: Batch):
-        self.shape = pyglet.shapes.Rectangle(x, y, width, height, color, batch)
-        self.shape.anchor_x, self.shape.anchor_y = width / 2, height / 2
+    def __init__(self, x: float, y: float, width: float, height: float, color: tuple, batch: Batch = None):
+        self.radius = ((width / 2) ** 2 + (height / 2) ** 2) ** 0.5
+        coordinates = (
+            [round(x - width / 2), round(y - height / 2)],
+            [round(x - width / 2), round(y + height / 2)],
+            [round(x + width / 2), round(y - height / 2)],
+            [round(x + width / 2), round(y + height / 2)]
+        )
+        self.shape = pyglet.shapes.Polygon(*coordinates, color=color, batch=batch)
+
+    @property
+    def x(self):
+        min_x = max_x = None
+        for x, y in self.shape._coordinates:
+            if min_x is None or min_x > x:
+                min_x = x
+            if max_x is None or max_x < x:
+                max_x = x
+
+        return (min_x + max_x) / 2
+
+    @property
+    def y(self):
+        min_y = max_y = None
+        for x, y in self.shape._coordinates:
+            if min_y is None or min_y > y:
+                min_y = y
+            if max_y is None or max_y < y:
+                max_y = y
+
+        return (min_y + max_y) / 2
 
     def center(self, other):
-        center_x, center_y = other.shape.x + other.shape.width / 2, other.shape.y + other.shape.height / 2
-        self.shape.x, self.shape.y = center_x - self.shape.width / 2, center_y - self.shape.height / 2
+        dx = other.x - self.x
+        dy = other.y - self.x
+        self.move(dx, dy)
+
+    def move(self, dx, dy):
+        self.shape._coordinates = [[x + dx, y + dy] for x, y in self.shape._coordinates]
+        self.shape._update_position()
 
 
 class Robot(RectangularObject):
-    def __init__(self, x: float, y: float, width: float, height: float, color: tuple, direction: Direction, batch: Batch):
+    def __init__(self, x: float, y: float, width: float, height: float, color: tuple, batch: Batch):
         super().__init__(x, y, width, height, color, batch)
-        self.__direction = direction
-        self.arrow = pyglet.shapes.Triangle()
+        self.__rotation = 0
 
     @property
-    def direction(self) -> Direction:
-        return self.__direction
+    def rotation(self) -> float:
+        return self.__rotation
 
-    @direction.setter
-    def direction(self, direction: Direction):
-        self.__direction = direction
-        pass
-
+    @rotation.setter
+    def rotation(self, rotation: float):
+        self.__rotation = rotation
 
 
 class Application(pyglet.window.Window):
@@ -51,24 +87,37 @@ class Application(pyglet.window.Window):
         # initialize window and application
         display = pyglet.canvas.Display().get_default_screen()
         x_mult, y_mult = display.width / 16, display.height / 9
-        mult = min(x_mult, y_mult) * 0.75
+        mult = round(min(x_mult, y_mult) * 0.75)
         self.set_size(16 * mult, 9 * mult)
         self.set_location(0, 0)
+        self.dragging = False
+        self.drag_direction = None
 
         # initialize field variables
         self.tileSize = 0.6096
         self.pixel_per_meter = self.height / (self.tileSize * 6)
         self.backgroundBatch = pyglet.graphics.Batch()
         self.foregroundBatch = pyglet.graphics.Batch()
+        path = os.path.join(os.getcwd(), "field.png")
+        self.background = None
+        if os.path.exists(path):
+            self.background = pyglet.sprite.Sprite(pyglet.image.load(path), 0, 0, batch=self.backgroundBatch)
+            field_size = round(self.tileSize * self.pixel_per_meter * 6)
+            self.background.scale_x = field_size / self.background.width
+            self.background.scale_y = field_size / self.background.height
 
         # initialize objects
         size = self.tileSize * self.pixel_per_meter
         self.tiles = []
         for number in range(36):
             x, y = (number // 6 + 0.5) * size, (number % 6 + 0.5) * size
-            self.tiles.append(RectangularObject(x, y, size, size, (25, 25, 25), self.backgroundBatch))
+            if path is None:
+                batch = self.backgroundBatch
+            else:
+                batch = None
+            self.tiles.append(RectangularObject(x, y, size, size, (25, 25, 25), batch))
         size = 0.4572 * self.pixel_per_meter
-        self.robot = RectangularObject(0, 0, size, size, (255, 200, 200), self.foregroundBatch)
+        self.robot = Robot(0, 0, size, size, (255, 200, 200), self.foregroundBatch)
         self.robot.center(self.tiles[0])
 
         # storage variables
@@ -83,17 +132,27 @@ class Application(pyglet.window.Window):
         self.foregroundBatch.draw()
 
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        shape = self.robot.shape
-        min_x, max_x = shape.x - shape.width/2, shape.x + shape.width/2
-        min_y, max_y = shape.y - shape.height/2, shape.y + shape.height/2
-        if max_x >= x >= min_x and max_y >= y >= min_y:
+        if (abs(x - self.robot.x) ** 2 + abs(y - self.robot.y) ** 2) ** 0.5 < self.robot.radius:
             distance = 0
             direction = None
-            if abs(dy) > abs(dx):
-                shape.y += dy
-            else:
-                shape.x += dx
+            if (self.drag_direction is None and abs(dy) > abs(dx)) or (self.drag_direction is Direction.VERTICAL):
+                self.robot.move(0, dy)
+                self.drag_direction = Direction.VERTICAL
+            if (self.drag_direction is None and abs(dx) > abs(dy)) or self.drag_direction is Direction.HORIZONTAL:
+                self.robot.move(dx, 0)
+                self.drag_direction = Direction.HORIZONTAL
             self.movements.append((direction, distance))
+        else:
+            self.drag_direction = Direction.VOID
+
+    def on_mouse_press(self, x, y, button, modifiers):
+        for tile in self.tiles:
+            if (abs(x - tile.x) ** 2 + abs(y - tile.y) ** 2) ** 0.5 < tile.radius:
+                tile.shape.color = (255, 0, 0)
+                break
+
+    def on_mouse_release(self, x, y, button, modifiers):
+        self.drag_direction = None
 
 
 if __name__ == '__main__':
