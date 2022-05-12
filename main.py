@@ -1,11 +1,17 @@
+import math
+
 import pyglet
-from pyglet.graphics import Batch
 from enum import Enum
 import os
 
 
-class Direction(Enum):
+class ActionType(Enum):
+    ROTATION = 0
+    MOVEMENT = 1
+    FUNCTION = 2
 
+
+class Direction(Enum):
     VOID = -1
 
     FORWARD = 0
@@ -22,6 +28,19 @@ class Direction(Enum):
     COUNTERCLOCKWISE = 21
 
 
+class Movement:
+    def __init__(self, action: ActionType, direction: Direction, amount: float):
+        self.action = action
+        self.direction = direction
+        self.amount = amount
+
+    def __repr__(self):
+        if self.action is ActionType.MOVEMENT:
+            return f"move({self.amount}, Direction.{self.direction.name})"
+        elif self.action is ActionType.ROTATION:
+            return f"turn({self.amount}, Direction.{self.direction.name})"
+
+
 class Application(pyglet.window.Window):
     def __init__(self):
         super(Application, self).__init__()
@@ -33,8 +52,12 @@ class Application(pyglet.window.Window):
         self.set_location(0, 0)
         self.dragging = False
         self.drag_direction = None
+        self.setup = False
+        self.held_keys = pyglet.window.key.KeyStateHandler()
 
         # initialize field variables
+        self.speed = 1.5
+        self.rotation_speed = 90
         self.tileSize = 0.6096
         self.pixel_per_meter = self.height / (self.tileSize * 6)
         self.backgroundBatch = pyglet.graphics.Batch()
@@ -48,32 +71,87 @@ class Application(pyglet.window.Window):
         # initialize objects
         size = 0.4572 * self.pixel_per_meter
         path = os.path.join(os.getcwd(), "robot.png")
-        self.robot = pyglet.sprite.Sprite(pyglet.image.load(path), 0, 0, batch=self.foregroundBatch)
-        self.robot.scale_x = size / self.robot.width
-        self.robot.scale_y = size / self.robot.height
+        image = pyglet.image.load(path)
+        image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
+        self.robot = pyglet.sprite.Sprite(image, field_size/2, field_size/2, batch=self.foregroundBatch)
+        self.robot.scale_x, self.robot.scale_y = size / self.robot.width, size / self.robot.height
+        self.robot.opacity = 200
 
         # storage variables
         self.movements = []
 
     def on_update(self, dt: float):
-        pass
+        rotation = self.robot.rotation * math.pi / 180
+        x_mult = math.sin(rotation)
+        y_mult = math.cos(rotation)
+
+        p_rotation = rotation + math.pi / 2
+        p_x_mult = math.sin(p_rotation)
+        p_y_mult = math.cos(p_rotation)
+
+        distance = self.speed * self.pixel_per_meter * dt
+        rotation = self.rotation_speed * dt
+
+        action_type = None
+        direction = None
+        amount = 0
+
+        if self.held_keys[pyglet.window.key.Q]:
+            self.robot.rotation -= rotation
+            action_type = ActionType.ROTATION
+            direction = Direction.COUNTERCLOCKWISE
+            amount = rotation
+
+        elif self.held_keys[pyglet.window.key.E]:
+            self.robot.rotation += rotation
+            action_type = ActionType.ROTATION
+            direction = Direction.CLOCKWISE
+            amount = rotation
+
+        elif self.held_keys[pyglet.window.key.W]:
+            self.robot.x += distance * x_mult
+            self.robot.y += distance * y_mult
+            action_type = ActionType.MOVEMENT
+            direction = Direction.FORWARD
+            amount = distance / self.pixel_per_meter
+
+        elif self.held_keys[pyglet.window.key.S]:
+            self.robot.x -= distance * x_mult
+            self.robot.y -= distance * y_mult
+            action_type = ActionType.MOVEMENT
+            direction = Direction.BACKWARD
+            amount = distance / self.pixel_per_meter
+
+        elif self.held_keys[pyglet.window.key.A]:
+            self.robot.x -= distance * p_x_mult
+            self.robot.y -= distance * p_y_mult
+            action_type = ActionType.MOVEMENT
+            direction = Direction.RIGHTWARD
+            amount = distance / self.pixel_per_meter
+
+        elif self.held_keys[pyglet.window.key.D]:
+            self.robot.x += distance * p_x_mult
+            self.robot.y += distance * p_y_mult
+            action_type = ActionType.MOVEMENT
+            direction = Direction.LEFTWARD
+            amount = distance / self.pixel_per_meter
+
+        if self.setup:
+            self.movements.append(Movement(action_type, direction, amount))
 
     def on_render(self, dt: float):
         self.clear()
         self.backgroundBatch.draw()
         self.foregroundBatch.draw()
 
-    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
-        pass
+    def on_key_press(self, symbol, modifiers):
+        self.held_keys[symbol] = True
 
-    def on_mouse_press(self, x, y, button, modifiers):
-        for tile in self.tiles:
-            if (abs(x - tile.x) ** 2 + abs(y - tile.y) ** 2) ** 0.5 < tile.radius:
-                tile.shape.color = (255, 0, 0)
-                break
-
-    def on_mouse_release(self, x, y, button, modifiers):
-        pass
+    def on_key_release(self, symbol, modifiers):
+        if symbol == pyglet.window.key.ENTER:
+            self.setup = True
+            self.robot.opacity = 255
+        self.held_keys[symbol] = False
 
 
 if __name__ == '__main__':
