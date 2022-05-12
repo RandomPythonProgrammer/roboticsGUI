@@ -6,6 +6,7 @@ import os
 
 
 class ActionType(Enum):
+    VOID = -1
     ROTATION = 0
     MOVEMENT = 1
     FUNCTION = 2
@@ -39,6 +40,11 @@ class Movement:
             return f"move({self.amount}, Direction.{self.direction.name})"
         elif self.action is ActionType.ROTATION:
             return f"turn({self.amount}, Direction.{self.direction.name})"
+        elif self.action is ActionType.VOID:
+            return None
+
+    def __add__(self, other):
+        return Movement(self.action, self.direction, self.amount + other.amount)
 
 
 class Application(pyglet.window.Window):
@@ -136,8 +142,13 @@ class Application(pyglet.window.Window):
             direction = Direction.LEFTWARD
             amount = distance / self.pixel_per_meter
 
-        if self.setup:
-            self.movements.append(Movement(action_type, direction, amount))
+        if self.setup and amount > 0:
+            movement = Movement(action_type, direction, amount)
+            has_previous = len(self.movements) > 0
+            if has_previous and self.movements[-1].action is action_type and self.movements[-1].direction is direction:
+                self.movements[-1] = self.movements[-1] + movement
+            else:
+                self.movements.append(movement)
 
     def on_render(self, dt: float):
         self.clear()
@@ -146,6 +157,11 @@ class Application(pyglet.window.Window):
 
     def on_key_press(self, symbol, modifiers):
         self.held_keys[symbol] = True
+        if symbol is pyglet.window.key.C and modifiers & pyglet.window.key.MOD_ACCEL:
+            for movement in self.movements:
+                print(movement)
+        if symbol is pyglet.window.key.SPACE:
+            self.movements.append(Movement(ActionType.VOID, Direction.VOID, 0))
 
     def on_key_release(self, symbol, modifiers):
         if symbol == pyglet.window.key.ENTER:
