@@ -3,6 +3,7 @@ import math
 import pyglet
 from enum import Enum
 import os
+import json
 
 
 class ActionType(Enum):
@@ -63,27 +64,30 @@ class Application(pyglet.window.Window):
         self.drag_direction = None
         self.setup = False
         self.held_keys = pyglet.window.key.KeyStateHandler()
+        with open('config.json', 'r') as config:
+            self.settings = json.load(config)
 
         # initialize field variables
-        self.speed = 1
-        self.rotation_speed = 66
+        self.speed = self.settings['robot_speed']
+        self.rotation_speed = self.settings['robot_turn_speed']
         self.tileSize = 0.6096
         self.pixel_per_meter = self.height / (self.tileSize * 6)
         self.backgroundBatch = pyglet.graphics.Batch()
         self.foregroundBatch = pyglet.graphics.Batch()
-        path = os.path.join(os.getcwd(), "field.png")
+        path = os.path.join(os.getcwd(), 'field.png')
         self.background = pyglet.sprite.Sprite(pyglet.image.load(path), 0, 0, batch=self.backgroundBatch)
         self.field_size = round(self.tileSize * self.pixel_per_meter * 6)
         self.background.scale_x = self.field_size / self.background.width
         self.background.scale_y = self.field_size / self.background.height
 
         # initialize objects
-        size = 0.4572 * self.pixel_per_meter
+        width = self.settings['robot_width'] * self.pixel_per_meter
+        length = self.settings['robot_length'] * self.pixel_per_meter
         path = os.path.join(os.getcwd(), "robot.png")
         image = pyglet.image.load(path)
         image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
         self.robot = pyglet.sprite.Sprite(image, self.field_size / 2, self.field_size / 2, batch=self.foregroundBatch)
-        self.robot.scale_x, self.robot.scale_y = size / self.robot.width, size / self.robot.height
+        self.robot.scale_x, self.robot.scale_y = width / self.robot.width, length / self.robot.height
         self.robot.opacity = 200
 
         # storage variables
