@@ -20,13 +20,8 @@ class Direction(Enum):
     RIGHTWARD = 2
     LEFTWARD = 3
 
-    NORTH = 10
-    SOUTH = 11
-    EAST = 12
-    WEST = 13
-
-    CLOCKWISE = 20
-    COUNTERCLOCKWISE = 21
+    CLOCKWISE = 10
+    COUNTERCLOCKWISE = 11
 
 
 class Movement:
@@ -47,7 +42,8 @@ class Movement:
     def __add__(self, other):
         if self.direction is other.direction:
             return Movement(self.action, self.direction, self.amount + other.amount, self.state)
-        elif self.direction.value % 2 != other.direction.value % 2:
+        elif self.direction.value % 2 != other.direction.value % 2 and abs(
+                self.direction.value - other.direction.value) is 1:
             if self.amount > other.amount:
                 return Movement(self.action, self.direction, self.amount - other.amount, self.state)
             else:
@@ -86,7 +82,7 @@ class Application(pyglet.window.Window):
         path = os.path.join(os.getcwd(), "robot.png")
         image = pyglet.image.load(path)
         image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
-        self.robot = pyglet.sprite.Sprite(image, field_size/2, field_size/2, batch=self.foregroundBatch)
+        self.robot = pyglet.sprite.Sprite(image, field_size / 2, field_size / 2, batch=self.foregroundBatch)
         self.robot.scale_x, self.robot.scale_y = size / self.robot.width, size / self.robot.height
         self.robot.opacity = 200
 
@@ -162,7 +158,8 @@ class Application(pyglet.window.Window):
             movement = Movement(action_type, direction, amount, state)
             has_previous = len(self.movements) > 0
             are_opposite = has_previous and direction.value % 2 != self.movements[-1].direction.value % 2
-            if has_previous and self.movements[-1].action is action_type or are_opposite:
+            same_group = abs(has_previous and direction.value - self.movements[-1].direction.value) is 1
+            if has_previous and self.movements[-1].action is action_type or (are_opposite and same_group):
                 new_movement = self.movements.pop(-1) + movement
                 if new_movement.amount > 0:
                     self.movements.append(new_movement)
@@ -192,11 +189,19 @@ class Application(pyglet.window.Window):
 
             radians = self.robot.rotation * math.pi / 180
             if symbol is pyglet.window.key.Q:
-                self.robot.rotation = round((radians - (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
-                self.add_movement(math.pi/4, ActionType.ROTATION, Direction.COUNTERCLOCKWISE, (position, angle))
+                new_angle = round((radians - (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
+                self.add_movement(
+                    abs(angle - new_angle) * math.pi / 180,
+                    ActionType.ROTATION, Direction.COUNTERCLOCKWISE, (position, angle)
+                )
+                self.robot.rotation = new_angle
             elif symbol is pyglet.window.key.E:
-                self.robot.rotation = round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
-                self.add_movement(math.pi/4, ActionType.ROTATION, Direction.CLOCKWISE, (position, angle))
+                new_angle = round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
+                self.add_movement(
+                    abs(angle - new_angle) * math.pi / 180,
+                    ActionType.ROTATION, Direction.CLOCKWISE, (position, angle)
+                )
+                self.robot.rotation = new_angle
 
         if symbol is pyglet.window.key.P and modifiers & pyglet.window.key.MOD_ACCEL:
             for line in self.get_code():
