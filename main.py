@@ -64,7 +64,7 @@ class Application(pyglet.window.Window):
         self.drag_direction = None
         self.setup = False
         self.held_keys = pyglet.window.key.KeyStateHandler()
-        with open('config.json', 'r') as config:
+        with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as config:
             self.settings = json.load(config)
         self.set_caption("RoboticsGUI")
 
@@ -75,7 +75,7 @@ class Application(pyglet.window.Window):
         self.pixel_per_meter = self.height / (self.tileSize * 6)
         self.backgroundBatch = pyglet.graphics.Batch()
         self.foregroundBatch = pyglet.graphics.Batch()
-        path = os.path.join(os.getcwd(), 'field.png')
+        path = os.path.join(os.path.dirname(__file__), 'field.png')
         self.background = pyglet.sprite.Sprite(pyglet.image.load(path), 0, 0, batch=self.backgroundBatch)
         self.field_size = round(self.tileSize * self.pixel_per_meter * 6)
         self.background.scale_x = self.field_size / self.background.width
@@ -84,7 +84,7 @@ class Application(pyglet.window.Window):
         # initialize objects
         width = self.settings['robot_width'] * self.pixel_per_meter
         length = self.settings['robot_length'] * self.pixel_per_meter
-        path = os.path.join(os.getcwd(), "robot.png")
+        path = os.path.join(os.path.dirname(__file__), "robot.png")
         image = pyglet.image.load(path)
         image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
         self.robot = pyglet.sprite.Sprite(image, self.field_size / 2, self.field_size / 2, batch=self.foregroundBatch)
