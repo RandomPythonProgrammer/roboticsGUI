@@ -17,8 +17,8 @@ class Direction(Enum):
 
     FORWARD = 0
     BACKWARD = 1
-    RIGHTWARD = 2
-    LEFTWARD = 3
+    RIGHTWARD = 3
+    LEFTWARD = 4
 
     CLOCKWISE = 10
     COUNTERCLOCKWISE = 11
@@ -33,9 +33,9 @@ class Movement:
 
     def __repr__(self):
         if self.action is ActionType.MOVEMENT:
-            return f"move({self.amount}, Direction.{self.direction.name})"
+            return f"move({self.amount}, Direction.{self.direction.name});"
         elif self.action is ActionType.ROTATION:
-            return f"turn({self.amount}, Direction.{self.direction.name})"
+            return f"turn({self.amount}, Direction.{self.direction.name});"
         elif self.action is ActionType.VOID:
             return None
 
@@ -65,24 +65,24 @@ class Application(pyglet.window.Window):
         self.held_keys = pyglet.window.key.KeyStateHandler()
 
         # initialize field variables
-        self.speed = 1.5
-        self.rotation_speed = 90
+        self.speed = 1
+        self.rotation_speed = 66
         self.tileSize = 0.6096
         self.pixel_per_meter = self.height / (self.tileSize * 6)
         self.backgroundBatch = pyglet.graphics.Batch()
         self.foregroundBatch = pyglet.graphics.Batch()
         path = os.path.join(os.getcwd(), "field.png")
         self.background = pyglet.sprite.Sprite(pyglet.image.load(path), 0, 0, batch=self.backgroundBatch)
-        field_size = round(self.tileSize * self.pixel_per_meter * 6)
-        self.background.scale_x = field_size / self.background.width
-        self.background.scale_y = field_size / self.background.height
+        self.field_size = round(self.tileSize * self.pixel_per_meter * 6)
+        self.background.scale_x = self.field_size / self.background.width
+        self.background.scale_y = self.field_size / self.background.height
 
         # initialize objects
         size = 0.4572 * self.pixel_per_meter
         path = os.path.join(os.getcwd(), "robot.png")
         image = pyglet.image.load(path)
         image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
-        self.robot = pyglet.sprite.Sprite(image, field_size / 2, field_size / 2, batch=self.foregroundBatch)
+        self.robot = pyglet.sprite.Sprite(image, self.field_size / 2, self.field_size / 2, batch=self.foregroundBatch)
         self.robot.scale_x, self.robot.scale_y = size / self.robot.width, size / self.robot.height
         self.robot.opacity = 200
 
@@ -160,7 +160,7 @@ class Application(pyglet.window.Window):
                 previous = self.movements[-1]
                 are_opposite = direction.value % 2 != previous.direction.value % 2
                 same_group = abs(direction.value - previous.direction.value) is 1
-                same_direction = previous.direction == direction
+                same_direction = previous.direction is direction
                 if (previous.action is action_type and same_direction) or (are_opposite and same_group):
                     movement = self.movements.pop(-1) + movement
 
@@ -217,6 +217,7 @@ class Application(pyglet.window.Window):
         if symbol is pyglet.window.key.C and modifiers & pyglet.window.key.MOD_ACCEL:
             if len(self.movements) > 0:
                 self.robot.position, self.robot.rotation = self.movements[0].state
+                self.robot.x = self.robot.y = self.field_size/2
                 self.movements.clear()
                 self.setup = False
                 self.robot.opacity = 200
