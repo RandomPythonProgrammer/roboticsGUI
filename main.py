@@ -21,8 +21,8 @@ class Direction(Enum):
     LEFTWARD = 3
 
     NORTH = 10
-    EAST = 11
-    SOUTH = 12
+    SOUTH = 11
+    EAST = 12
     WEST = 13
 
     CLOCKWISE = 20
@@ -30,10 +30,11 @@ class Direction(Enum):
 
 
 class Movement:
-    def __init__(self, action: ActionType, direction: Direction, amount: float):
+    def __init__(self, action: ActionType, direction: Direction, amount: float, state: tuple):
         self.action = action
         self.direction = direction
         self.amount = amount
+        self.state = state
 
     def __repr__(self):
         if self.action is ActionType.MOVEMENT:
@@ -44,7 +45,13 @@ class Movement:
             return None
 
     def __add__(self, other):
-        return Movement(self.action, self.direction, self.amount + other.amount)
+        if self.direction is other.direction:
+            return Movement(self.action, self.direction, self.amount + other.amount, self.state)
+        elif self.direction.value % 2 != other.direction.value % 2:
+            if self.amount > other.amount:
+                return Movement(self.action, self.direction, self.amount - other.amount, self.state)
+            else:
+                return Movement(self.action, other.direction, other.amount - self.amount, other.state)
 
 
 class Application(pyglet.window.Window):
@@ -87,6 +94,12 @@ class Application(pyglet.window.Window):
         self.movements = []
 
     def on_update(self, dt: float):
+        if self.held_keys[pyglet.window.key.LSHIFT] or self.held_keys[pyglet.window.key.RSHIFT]:
+            return
+
+        angle = self.robot.rotation
+        position = self.robot.position
+
         rotation = self.robot.rotation * math.pi / 180
         x_mult = math.sin(rotation)
         y_mult = math.cos(rotation)
@@ -132,21 +145,27 @@ class Application(pyglet.window.Window):
             self.robot.x -= distance * p_x_mult
             self.robot.y -= distance * p_y_mult
             action_type = ActionType.MOVEMENT
-            direction = Direction.RIGHTWARD
+            direction = Direction.LEFTWARD
             amount = distance / self.pixel_per_meter
 
         elif self.held_keys[pyglet.window.key.D]:
             self.robot.x += distance * p_x_mult
             self.robot.y += distance * p_y_mult
             action_type = ActionType.MOVEMENT
-            direction = Direction.LEFTWARD
+            direction = Direction.RIGHTWARD
             amount = distance / self.pixel_per_meter
 
+        self.add_movement(amount, action_type, direction, (position, angle))
+
+    def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple):
         if self.setup and amount > 0:
-            movement = Movement(action_type, direction, amount)
+            movement = Movement(action_type, direction, amount, state)
             has_previous = len(self.movements) > 0
-            if has_previous and self.movements[-1].action is action_type and self.movements[-1].direction is direction:
-                self.movements[-1] = self.movements[-1] + movement
+            are_opposite = has_previous and direction.value % 2 != self.movements[-1].direction.value % 2
+            if has_previous and self.movements[-1].action is action_type or are_opposite:
+                new_movement = self.movements.pop(-1) + movement
+                if new_movement.amount > 0:
+                    self.movements.append(new_movement)
             else:
                 self.movements.append(movement)
 
@@ -157,17 +176,42 @@ class Application(pyglet.window.Window):
 
     def on_key_press(self, symbol, modifiers):
         self.held_keys[symbol] = True
-        if symbol is pyglet.window.key.C and modifiers & pyglet.window.key.MOD_ACCEL:
-            for movement in self.movements:
-                print(movement)
-        if symbol is pyglet.window.key.SPACE:
-            self.movements.append(Movement(ActionType.VOID, Direction.VOID, 0))
+
+    def get_code(self):
+        return [movement for movement in self.movements if movement.action != ActionType.VOID and movement.amount > 0]
 
     def on_key_release(self, symbol, modifiers):
         if symbol == pyglet.window.key.ENTER:
             self.setup = True
             self.robot.opacity = 255
         self.held_keys[symbol] = False
+
+        if modifiers & pyglet.window.key.MOD_SHIFT:
+            position = self.robot.position
+            angle = self.robot.rotation
+
+            radians = self.robot.rotation * math.pi / 180
+            if symbol is pyglet.window.key.Q:
+                self.robot.rotation = round((radians - (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
+                self.add_movement(math.pi/4, ActionType.ROTATION, Direction.COUNTERCLOCKWISE, (position, angle))
+            elif symbol is pyglet.window.key.E:
+                self.robot.rotation = round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
+                self.add_movement(math.pi/4, ActionType.ROTATION, Direction.CLOCKWISE, (position, angle))
+
+        if symbol is pyglet.window.key.P and modifiers & pyglet.window.key.MOD_ACCEL:
+            for line in self.get_code():
+                print(line)
+            print("--------------------------------------")
+
+        if symbol is pyglet.window.key.Z and modifiers & pyglet.window.key.MOD_ACCEL:
+            if len(self.movements) > 0:
+                movement = self.movements.pop(-1)
+                self.robot.position, self.robot.rotation = movement.state
+
+        if symbol is pyglet.window.key.SPACE:
+            self.movements.append(
+                Movement(ActionType.VOID, Direction.VOID, 0, (self.robot.position, self.robot.rotation))
+            )
 
 
 if __name__ == '__main__':
