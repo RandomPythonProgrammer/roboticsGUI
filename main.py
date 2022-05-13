@@ -28,7 +28,7 @@ class Movement:
     def __init__(self, action: ActionType, direction: Direction, amount: float, state: tuple):
         self.action = action
         self.direction = direction
-        self.amount = amount
+        self.amount = round(amount, 4)
         self.state = state
 
     def __repr__(self):
@@ -161,6 +161,7 @@ class Application(pyglet.window.Window):
 
         if amount > 0:
             self.add_movement(amount, action_type, direction, (position, angle))
+            self.update_console()
 
     def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple):
         if self.setup and amount > 0:
@@ -175,7 +176,6 @@ class Application(pyglet.window.Window):
 
             if movement.amount > 0:
                 self.movements.append(movement)
-                self.update_console()
 
     def on_render(self, dt: float):
         self.clear()
@@ -190,7 +190,7 @@ class Application(pyglet.window.Window):
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.console_box.x <= x <= self.console_box.x + self.console_box.width:
-            self.console_box.y = min(max(self.console_box.y + scroll_y, 0), self.console_box.height - self.field_size)
+            self.console_box.y = min(max(self.console_box.y + scroll_y, 0), self.console_box.height - self.field_size/4)
 
     def on_key_release(self, symbol, modifiers):
         if symbol == pyglet.window.key.ENTER:
@@ -209,6 +209,7 @@ class Application(pyglet.window.Window):
                     abs(angle - new_angle) * math.pi / 180,
                     ActionType.ROTATION, Direction.COUNTERCLOCKWISE, (position, angle)
                 )
+                self.update_console()
                 self.robot.rotation = new_angle
             elif symbol is pyglet.window.key.E:
                 new_angle = round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
@@ -216,6 +217,7 @@ class Application(pyglet.window.Window):
                     abs(angle - new_angle) * math.pi / 180,
                     ActionType.ROTATION, Direction.CLOCKWISE, (position, angle)
                 )
+                self.update_console()
                 self.robot.rotation = new_angle
 
         if symbol is pyglet.window.key.P and modifiers & pyglet.window.key.MOD_ACCEL:
