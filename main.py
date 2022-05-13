@@ -66,6 +66,7 @@ class Application(pyglet.window.Window):
         self.held_keys = pyglet.window.key.KeyStateHandler()
         with open('config.json', 'r') as config:
             self.settings = json.load(config)
+        self.set_caption("RoboticsGUI")
 
         # initialize field variables
         self.speed = self.settings['robot_speed']
