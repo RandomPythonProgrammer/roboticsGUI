@@ -156,14 +156,15 @@ class Application(pyglet.window.Window):
     def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple):
         if self.setup and amount > 0:
             movement = Movement(action_type, direction, amount, state)
-            has_previous = len(self.movements) > 0
-            are_opposite = has_previous and direction.value % 2 != self.movements[-1].direction.value % 2
-            same_group = abs(has_previous and direction.value - self.movements[-1].direction.value) is 1
-            if has_previous and self.movements[-1].action is action_type or (are_opposite and same_group):
-                new_movement = self.movements.pop(-1) + movement
-                if new_movement.amount > 0:
-                    self.movements.append(new_movement)
-            else:
+            if len(self.movements) > 0:
+                previous = self.movements[-1]
+                are_opposite = direction.value % 2 != previous.direction.value % 2
+                same_group = abs(direction.value - previous.direction.value) is 1
+                same_direction = previous.direction == direction
+                if (previous.action is action_type and same_direction) or (are_opposite and same_group):
+                    movement = self.movements.pop(-1) + movement
+
+            if movement.amount > 0:
                 self.movements.append(movement)
 
     def on_render(self, dt: float):
@@ -212,6 +213,13 @@ class Application(pyglet.window.Window):
             if len(self.movements) > 0:
                 movement = self.movements.pop(-1)
                 self.robot.position, self.robot.rotation = movement.state
+
+        if symbol is pyglet.window.key.C and modifiers & pyglet.window.key.MOD_ACCEL:
+            if len(self.movements) > 0:
+                self.robot.position, self.robot.rotation = self.movements[0].state
+                self.movements.clear()
+                self.setup = False
+                self.robot.opacity = 200
 
         if symbol is pyglet.window.key.SPACE:
             self.movements.append(
