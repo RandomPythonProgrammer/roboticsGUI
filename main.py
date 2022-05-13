@@ -88,6 +88,14 @@ class Application(pyglet.window.Window):
 
         # storage variables
         self.movements = []
+        self.console = pyglet.text.document.FormattedDocument()
+        self.console_box = pyglet.text.layout.TextLayout(
+            self.console,
+            self.width - self.field_size, self.field_size,
+            multiline=True,
+            batch=self.foregroundBatch
+        )
+        self.console_box.x, self.console_box.y = self.field_size, 0
 
     def on_update(self, dt: float):
         if self.held_keys[pyglet.window.key.LSHIFT] or self.held_keys[pyglet.window.key.RSHIFT]:
@@ -151,7 +159,8 @@ class Application(pyglet.window.Window):
             direction = Direction.RIGHTWARD
             amount = distance / self.pixel_per_meter
 
-        self.add_movement(amount, action_type, direction, (position, angle))
+        if amount > 0:
+            self.add_movement(amount, action_type, direction, (position, angle))
 
     def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple):
         if self.setup and amount > 0:
@@ -166,6 +175,7 @@ class Application(pyglet.window.Window):
 
             if movement.amount > 0:
                 self.movements.append(movement)
+                self.update_console()
 
     def on_render(self, dt: float):
         self.clear()
@@ -177,6 +187,10 @@ class Application(pyglet.window.Window):
 
     def get_code(self):
         return [movement for movement in self.movements if movement.action != ActionType.VOID and movement.amount > 0]
+
+    def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
+        if self.console_box.x <= x <= self.console_box.x + self.console_box.width:
+            self.console_box.y = min(max(self.console_box.y + scroll_y, 0), self.console_box.height - self.field_size)
 
     def on_key_release(self, symbol, modifiers):
         if symbol == pyglet.window.key.ENTER:
@@ -213,19 +227,33 @@ class Application(pyglet.window.Window):
             if len(self.movements) > 0:
                 movement = self.movements.pop(-1)
                 self.robot.position, self.robot.rotation = movement.state
+                self.update_console()
 
         if symbol is pyglet.window.key.C and modifiers & pyglet.window.key.MOD_ACCEL:
             if len(self.movements) > 0:
                 self.robot.position, self.robot.rotation = self.movements[0].state
-                self.robot.x = self.robot.y = self.field_size/2
+                self.robot.x = self.robot.y = self.field_size / 2
                 self.movements.clear()
                 self.setup = False
                 self.robot.opacity = 200
+                self.update_console()
 
         if symbol is pyglet.window.key.SPACE:
             self.movements.append(
                 Movement(ActionType.VOID, Direction.VOID, 0, (self.robot.position, self.robot.rotation))
             )
+            self.update_console()
+
+    def update_console(self):
+        lines = self.get_code()
+        self.console.delete_text(0, len(self.console.text))
+        text = ""
+        for line in lines:
+            index = lines.index(line)
+            text += f"{index + 1}: {line}\n"
+        self.console.insert_text(0, text, dict(
+            color=(255, 255, 255, 255)
+        ))
 
 
 if __name__ == '__main__':
