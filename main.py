@@ -16,9 +16,9 @@ class Direction(Enum):
     VOID = -1
 
     FORWARD = 0
-    BACKWARD = 1
-    RIGHTWARD = 3
-    LEFTWARD = 4
+    RIGHTWARD = 1
+    BACKWARD = 2
+    LEFTWARD = 3
 
     CLOCKWISE = 10
     COUNTERCLOCKWISE = 11
@@ -42,7 +42,7 @@ class Movement:
     def __add__(self, other):
         if self.direction is other.direction:
             return Movement(self.action, self.direction, self.amount + other.amount, self.state)
-        elif self.direction.value % 2 != other.direction.value % 2 and abs(
+        elif self.direction.value % 2 is other.direction.value % 2 and abs(
                 self.direction.value - other.direction.value) is 1:
             if self.amount > other.amount:
                 return Movement(self.action, self.direction, self.amount - other.amount, self.state)
@@ -158,7 +158,7 @@ class Application(pyglet.window.Window):
             movement = Movement(action_type, direction, amount, state)
             if len(self.movements) > 0:
                 previous = self.movements[-1]
-                are_opposite = direction.value % 2 != previous.direction.value % 2
+                are_opposite = direction.value % 2 is previous.direction.value % 2
                 same_group = abs(direction.value - previous.direction.value) is 1
                 same_direction = previous.direction is direction
                 if (previous.action is action_type and same_direction) or (are_opposite and same_group):
