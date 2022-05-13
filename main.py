@@ -22,7 +22,7 @@ class Direction(Enum):
     LEFTWARD = 3
 
     CLOCKWISE = 10
-    COUNTERCLOCKWISE = 11
+    COUNTERCLOCKWISE = 12
 
 
 class Movement:
@@ -43,8 +43,8 @@ class Movement:
     def __add__(self, other):
         if self.direction is other.direction:
             return Movement(self.action, self.direction, self.amount + other.amount, self.state)
-        elif self.direction.value % 2 is other.direction.value % 2 and abs(
-                self.direction.value - other.direction.value) is 1:
+        elif (self.direction.value % 2 is other.direction.value % 2) and (abs(
+                self.direction.value - other.direction.value) is 2):
             if self.amount > other.amount:
                 return Movement(self.action, self.direction, self.amount - other.amount, self.state)
             else:
@@ -173,7 +173,7 @@ class Application(pyglet.window.Window):
             if len(self.movements) > 0:
                 previous = self.movements[-1]
                 are_opposite = direction.value % 2 is previous.direction.value % 2
-                same_group = abs(direction.value - previous.direction.value) is 1
+                same_group = abs(direction.value - previous.direction.value) is 2
                 same_direction = previous.direction is direction
                 if (previous.action is action_type and same_direction) or (are_opposite and same_group):
                     movement = self.movements.pop(-1) + movement
