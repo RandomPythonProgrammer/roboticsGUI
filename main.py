@@ -178,7 +178,7 @@ class Application(pyglet.window.Window):
                 are_opposite = direction.value % 2 is previous.direction.value % 2
                 same_group = abs(direction.value - previous.direction.value) is 2
                 same_direction = previous.direction is direction
-                if (previous.action is action_type and same_direction) or (are_opposite and same_group):
+                if previous.action is action_type and (same_direction or (are_opposite and same_group)):
                     movement = self.movements.pop(-1) + movement
 
             if movement.amount > 0 or movement.action:
@@ -251,7 +251,7 @@ class Application(pyglet.window.Window):
 
             elif symbol is key.SPACE:
                 self.movements.append(
-                    0, ActionType.VOID, Direction.VOID, (self.robot.position, self.robot.rotation)
+                    Movement(ActionType.VOID, Direction.VOID, 0, (self.robot.position, self.robot.rotation))
                 )
 
             elif symbol is key.ENTER:
