@@ -17,13 +17,8 @@ class ActionType(Enum):
 class Direction(Enum):
     VOID = -1
 
-    FORWARD = 0
-    RIGHTWARD = 1
-    BACKWARD = 2
-    LEFTWARD = 3
-
-    CLOCKWISE = 10
-    COUNTERCLOCKWISE = 12
+    HORIZONTAL = 0
+    VERTICAL = 1
 
 
 class Movement:
@@ -35,23 +30,46 @@ class Movement:
 
     def __repr__(self):
         if self.action is ActionType.MOVEMENT:
-            return f"move({self.amount}, Direction.{self.direction.name});"
+            if self.direction is Direction.VERTICAL:
+                if self.amount > 0:
+                    return f"move forwards {abs(self.amount)}"
+                elif self.amount < 0:
+                    return f"move backwards {abs(self.amount)}"
+            elif self.direction is Direction.HORIZONTAL:
+                if self.amount > 0:
+                    return f"move right {abs(self.amount)}"
+                elif self.amount < 0:
+                    return f"move left {abs(self.amount)}"
+
         elif self.action is ActionType.ROTATION:
-            return f"turn({self.amount}, Direction.{self.direction.name});"
+            if self.amount > 0:
+                return f"turn right {abs(self.amount)}"
+            elif self.amount < 0:
+                return f"turn left {abs(self.amount)}"
         elif self.action is ActionType.SLEEP:
-            return f"delay({self.amount});"
+            return f"wait {abs(self.amount)}"
         elif self.action is ActionType.VOID:
             return None
 
+    def to_code(self):
+        if self.action is ActionType.MOVEMENT:
+            if self.direction is Direction.VERTICAL:
+                if self.amount > 0:
+                    return f".forwards({self.amount * 39.37})"
+                elif self.amount < 0:
+                    return f".back({self.amount * 39.37})"
+            elif self.direction is Direction.HORIZONTAL:
+                if self.amount > 0:
+                    return f".strafeRight({self.amount * 39.37})"
+                elif self.amount < 0:
+                    return f".strafeLeft({self.amount * 39.37})"
+        elif self.action is ActionType.ROTATION:
+            return f".turn({self.amount})"
+        elif self.action is ActionType.SLEEP:
+            return f".wait({self.amount})"
+
     def __add__(self, other):
-        if self.direction is other.direction:
-            return Movement(self.action, self.direction, self.amount + other.amount, self.state)
-        elif (self.direction.value % 2 is other.direction.value % 2) and (abs(
-                self.direction.value - other.direction.value) is 2):
-            if self.amount > other.amount:
-                return Movement(self.action, self.direction, self.amount - other.amount, self.state)
-            else:
-                return Movement(self.action, other.direction, other.amount - self.amount, other.state)
+        return Movement(self.action, self.direction, self.amount + other.amount, self.state)
 
 
 class Application(pyglet.window.Window):
@@ -130,58 +148,56 @@ class Application(pyglet.window.Window):
         if self.held_keys[key.Q]:
             self.robot.rotation -= rotation
             action_type = ActionType.ROTATION
-            direction = Direction.COUNTERCLOCKWISE
-            amount = rotation * math.pi / 180
+            direction = Direction.VOID
+            amount = -rotation * math.pi / 180
 
         elif self.held_keys[key.E]:
             self.robot.rotation += rotation
             action_type = ActionType.ROTATION
-            direction = Direction.CLOCKWISE
+            direction = Direction.VOID
             amount = rotation * math.pi / 180
 
         elif self.held_keys[key.W]:
             self.robot.x += distance * x_mult
             self.robot.y += distance * y_mult
             action_type = ActionType.MOVEMENT
-            direction = Direction.FORWARD
+            direction = Direction.VERTICAL
             amount = distance / self.pixel_per_meter
 
         elif self.held_keys[key.S]:
             self.robot.x -= distance * x_mult
             self.robot.y -= distance * y_mult
             action_type = ActionType.MOVEMENT
-            direction = Direction.BACKWARD
-            amount = distance / self.pixel_per_meter
+            direction = Direction.VERTICAL
+            amount = -distance / self.pixel_per_meter
 
         elif self.held_keys[key.A]:
             self.robot.x -= distance * p_x_mult
             self.robot.y -= distance * p_y_mult
             action_type = ActionType.MOVEMENT
-            direction = Direction.LEFTWARD
-            amount = distance / self.pixel_per_meter
+            direction = Direction.HORIZONTAL
+            amount = -distance / self.pixel_per_meter
 
         elif self.held_keys[key.D]:
             self.robot.x += distance * p_x_mult
             self.robot.y += distance * p_y_mult
             action_type = ActionType.MOVEMENT
-            direction = Direction.RIGHTWARD
+            direction = Direction.HORIZONTAL
             amount = distance / self.pixel_per_meter
 
-        if amount > 0:
+        if amount is not 0:
             self.add_movement(amount, action_type, direction, (position, angle))
 
     def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple):
-        if self.setup and amount > 0:
+        if self.setup:
             movement = Movement(action_type, direction, amount, state)
             if len(self.movements) > 0:
                 previous = self.movements[-1]
-                are_opposite = direction.value % 2 is previous.direction.value % 2
-                same_group = abs(direction.value - previous.direction.value) is 2
                 same_direction = previous.direction is direction
-                if previous.action is action_type and (same_direction or (are_opposite and same_group)):
+                if previous.action is action_type and same_direction:
                     movement = self.movements.pop(-1) + movement
 
-            if movement.amount > 0 or movement.action:
+            if movement.amount is not 0:
                 self.movements.append(movement)
                 self.update_console()
 
@@ -194,7 +210,24 @@ class Application(pyglet.window.Window):
         self.held_keys[symbol] = True
 
     def get_code(self):
-        return [movement for movement in self.movements if movement.action != ActionType.VOID and movement.amount > 0]
+        header = """SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+drive.setPoseEstimate(new Pose2d());
+TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
+    """
+
+        code = []
+        [
+            code.append(movement.to_code())
+            for movement in self.movements
+            if movement.action != ActionType.VOID and movement.amount > 0
+        ]
+        code.append(
+            ".build();"
+        )
+        return header + "\n\t".join(code)
+
+    def get_text(self):
+        return [str(line) for line in self.movements if line.action is not ActionType.VOID]
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.console_box.x <= x <= self.console_box.x + self.console_box.width:
@@ -212,8 +245,8 @@ class Application(pyglet.window.Window):
             if symbol is key.Q:
                 new_angle = round((radians - (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
                 self.add_movement(
-                    abs(angle - new_angle) * math.pi / 180,
-                    ActionType.ROTATION, Direction.COUNTERCLOCKWISE, (position, angle)
+                    -abs(angle - new_angle) * math.pi / 180,
+                    ActionType.ROTATION, Direction.VOID, (position, angle)
                 )
                 self.robot.rotation = new_angle
 
@@ -221,7 +254,7 @@ class Application(pyglet.window.Window):
                 new_angle = round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
                 self.add_movement(
                     abs(angle - new_angle) * math.pi / 180,
-                    ActionType.ROTATION, Direction.CLOCKWISE, (position, angle)
+                    ActionType.ROTATION, Direction.VOID, (position, angle)
                 )
                 self.robot.rotation = new_angle
 
@@ -230,8 +263,7 @@ class Application(pyglet.window.Window):
 
         else:
             if symbol is key.P and modifiers & key.MOD_ACCEL:
-                for line in self.get_code():
-                    print(line)
+                print(self.get_code())
                 print("--------------------------------------")
 
             elif symbol is key.Z and modifiers & key.MOD_ACCEL:
@@ -262,7 +294,7 @@ class Application(pyglet.window.Window):
                 self.add_movement(100, ActionType.SLEEP, Direction.VOID, (position, angle))
 
     def update_console(self):
-        lines = self.get_code()
+        lines = self.get_text()
         self.console.delete_text(0, len(self.console.text))
         text = ""
         for line in lines:
