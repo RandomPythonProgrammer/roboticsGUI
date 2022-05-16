@@ -55,14 +55,14 @@ class Movement:
         if self.action is ActionType.MOVEMENT:
             if self.direction is Direction.VERTICAL:
                 if self.amount > 0:
-                    return f".forwards({self.amount * 39.37})"
+                    return f".forwards({round(self.amount * 39.37, 4)})"
                 elif self.amount < 0:
-                    return f".back({self.amount * 39.37})"
+                    return f".back({round(abs(self.amount) * 39.37, 4)})"
             elif self.direction is Direction.HORIZONTAL:
                 if self.amount > 0:
-                    return f".strafeRight({self.amount * 39.37})"
+                    return f".strafeRight({round(self.amount * 39.37, 4)})"
                 elif self.amount < 0:
-                    return f".strafeLeft({self.amount * 39.37})"
+                    return f".strafeLeft({round(abs(self.amount) * 39.37, 4)})"
         elif self.action is ActionType.ROTATION:
             return f".turn({self.amount})"
         elif self.action is ActionType.SLEEP:
@@ -219,7 +219,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
         [
             code.append(movement.to_code())
             for movement in self.movements
-            if movement.action != ActionType.VOID and movement.amount > 0
+            if movement.action != ActionType.VOID
         ]
         code.append(
             ".build();"
@@ -263,6 +263,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
         else:
             if symbol is key.P and modifiers & key.MOD_ACCEL:
+                print("--------------------------------------")
                 print(self.get_code())
                 print("--------------------------------------")
 
