@@ -224,7 +224,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
         code.append(
             ".build();"
         )
-        return header + "\n\t".join(code)
+        return header + "\n\t".join(code) + "\ndrive.followTrajectorySequence(trajectory);"
 
     def get_text(self):
         return [str(line) for line in self.movements if line.action is not ActionType.VOID]
