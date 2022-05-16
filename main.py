@@ -66,7 +66,7 @@ class Movement:
         elif self.action is ActionType.ROTATION:
             return f".turn({self.amount})"
         elif self.action is ActionType.SLEEP:
-            return f".wait({self.amount})"
+            return f".waitSeconds({self.amount})"
 
     def __add__(self, other):
         return Movement(self.action, self.direction, self.amount + other.amount, self.state)
@@ -259,7 +259,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 self.robot.rotation = new_angle
 
             elif symbol is key.R:
-                self.add_movement(1000, ActionType.SLEEP, Direction.VOID, (position, angle))
+                self.add_movement(1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
         else:
             if symbol is key.P and modifiers & key.MOD_ACCEL:
@@ -292,7 +292,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 self.robot.opacity = 255
 
             elif symbol is key.R:
-                self.add_movement(100, ActionType.SLEEP, Direction.VOID, (position, angle))
+                self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
     def update_console(self):
         lines = self.get_text()
