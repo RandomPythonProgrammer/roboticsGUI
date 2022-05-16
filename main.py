@@ -48,8 +48,9 @@ class Movement:
                 return f"turn left {abs(self.amount)}"
         elif self.action is ActionType.SLEEP:
             return f"wait {abs(self.amount)}"
-        elif self.action is ActionType.VOID:
-            return None
+
+
+        return "Error"
 
     def to_code(self):
         if self.action is ActionType.MOVEMENT:
