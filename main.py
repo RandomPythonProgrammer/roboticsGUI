@@ -64,7 +64,7 @@ class Movement:
                 elif self.amount < 0:
                     return f".strafeLeft({round(abs(self.amount) * 39.37, 4)})"
         elif self.action is ActionType.ROTATION:
-            return f".turn({self.amount})"
+            return f".turn({-self.amount})"
         elif self.action is ActionType.SLEEP:
             return f".waitSeconds({self.amount})"
 
