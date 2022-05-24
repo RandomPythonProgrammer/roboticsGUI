@@ -1,10 +1,10 @@
+import json
 import math
+import os
+from enum import Enum
 
 import pyglet
 from pyglet.window import key
-from enum import Enum
-import os
-import json
 
 
 class ActionType(Enum):
