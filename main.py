@@ -16,7 +16,6 @@ class ActionType(Enum):
 
 class Direction(Enum):
     VOID = -1
-
     HORIZONTAL = 0
     VERTICAL = 1
 
@@ -111,6 +110,7 @@ class Application(pyglet.window.Window):
         self.robot = pyglet.sprite.Sprite(image, self.field_size / 2, self.field_size / 2, batch=self.foregroundBatch)
         self.robot.scale_x, self.robot.scale_y = width / self.robot.width, length / self.robot.height
         self.robot.opacity = 200
+        self.starting_position = self.robot.x, self.robot.y, self.robot.rotation
 
         # storage variables
         self.movements = []
@@ -210,11 +210,12 @@ class Application(pyglet.window.Window):
         self.held_keys[symbol] = True
 
     def get_code(self):
-        header = """SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-drive.setPoseEstimate(new Pose2d());
+        x, y, rotation = self.starting_position
+        x, y = (x / self.pixel_per_meter) * 39.37, (y / self.pixel_per_meter) * 39.37
+        header = f"""SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
+drive.setPoseEstimate(new Pose2d({x}, {y}, {-math.radians(rotation)}));
 TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
     """
-
         code = []
         [
             code.append(movement.to_code())
@@ -241,19 +242,19 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
         angle = self.robot.rotation
 
         if modifiers & key.MOD_SHIFT:
-            radians = self.robot.rotation * math.pi / 180
+            radians = math.radians(self.robot.rotation)
             if symbol is key.Q:
-                new_angle = round((radians - (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
+                new_angle = math.degrees(round((radians - (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4))
                 self.add_movement(
-                    -abs(angle - new_angle) * math.pi / 180,
+                    -math.radians(abs(angle - new_angle)),
                     ActionType.ROTATION, Direction.VOID, (position, angle)
                 )
                 self.robot.rotation = new_angle
 
             elif symbol is key.E:
-                new_angle = round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4) * 180 / math.pi
+                new_angle = math.degrees(round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4))
                 self.add_movement(
-                    abs(angle - new_angle) * math.pi / 180,
+                    math.radians(abs(angle - new_angle)),
                     ActionType.ROTATION, Direction.VOID, (position, angle)
                 )
                 self.robot.rotation = new_angle
@@ -290,6 +291,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
             elif symbol is key.ENTER:
                 self.setup = True
                 self.robot.opacity = 255
+                self.starting_position = self.robot.x, self.robot.y, self.robot.rotation
 
             elif symbol is key.R:
                 self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
