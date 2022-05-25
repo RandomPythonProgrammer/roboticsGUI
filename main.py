@@ -42,9 +42,9 @@ class Movement:
 
         elif self.action is ActionType.ROTATION:
             if self.amount > 0:
-                return f"turn right {abs(self.amount)}"
+                return f"turn right {round(math.degrees(abs(self.amount)), 4)}"
             elif self.amount < 0:
-                return f"turn left {abs(self.amount)}"
+                return f"turn left {round(math.degrees(abs(self.amount)), 4)}"
         elif self.action is ActionType.SLEEP:
             return f"wait {abs(self.amount)}"
 
@@ -107,10 +107,11 @@ class Application(pyglet.window.Window):
         path = os.path.join(os.path.dirname(__file__), "resources/robot.png")
         image = pyglet.image.load(path)
         image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
-        self.robot = pyglet.sprite.Sprite(image, self.field_size / 2, self.field_size / 2, batch=self.foregroundBatch)
+        self.center_x = self.center_y = self.field_size / 2
+        self.robot = pyglet.sprite.Sprite(image, self.center_x, self.center_y, batch=self.foregroundBatch)
         self.robot.scale_x, self.robot.scale_y = width / self.robot.width, length / self.robot.height
         self.robot.opacity = 200
-        self.starting_position = self.robot.x, self.robot.y, self.robot.rotation
+        self.starting_position = self.center_x, self.center_y, 0
 
         # storage variables
         self.movements = []
@@ -211,7 +212,7 @@ class Application(pyglet.window.Window):
 
     def get_code(self):
         x, y, rotation = self.starting_position
-        x, y = (x / self.pixel_per_meter) * 39.37, (y / self.pixel_per_meter) * 39.37
+        x, y = ((x - self.center_x) / self.pixel_per_meter) * 39.37, ((y - self.center_y) / self.pixel_per_meter) * 39.37
         header = f"""SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 drive.setPoseEstimate(new Pose2d({x}, {y}, {-math.radians(rotation)}));
 TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
@@ -264,9 +265,12 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
         else:
             if symbol is key.P and modifiers & key.MOD_ACCEL:
-                print("--------------------------------------")
-                print(self.get_code())
-                print("--------------------------------------")
+                try:
+                    line = "-" * os.get_terminal_size().columns
+                except OSError:
+                    line = "-" * 100
+
+                print(line + "\n" + self.get_code() + "\n" + line)
 
             elif symbol is key.Z and modifiers & key.MOD_ACCEL:
                 if len(self.movements) > 0:
@@ -276,8 +280,9 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
             elif symbol is key.C and modifiers & key.MOD_ACCEL:
                 if len(self.movements) > 0:
-                    self.robot.position, self.robot.rotation = self.movements[0].state
-                    self.robot.x = self.robot.y = self.field_size / 2
+                    self.robot.rotation = 0
+                    self.robot.x = self.center_x
+                    self.robot.y = self.center_y
                     self.movements.clear()
                     self.setup = False
                     self.robot.opacity = 200
