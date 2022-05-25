@@ -48,7 +48,7 @@ class Movement:
         elif self.action is ActionType.SLEEP:
             return f"wait {abs(self.amount)}"
 
-        return "Error"
+        return "[Error]: " + str(self.amount)
 
     def to_code(self):
         if self.action is ActionType.MOVEMENT:
@@ -125,9 +125,6 @@ class Application(pyglet.window.Window):
         self.console_box.x, self.console_box.y = self.field_size, 0
 
     def on_update(self, dt: float):
-        if self.held_keys[key.LSHIFT] or self.held_keys[key.RSHIFT]:
-            return
-
         angle = self.robot.rotation
         position = self.robot.position
 
@@ -146,19 +143,24 @@ class Application(pyglet.window.Window):
         direction = None
         amount = 0
 
-        if self.held_keys[key.Q]:
-            self.robot.rotation -= rotation
-            action_type = ActionType.ROTATION
-            direction = Direction.VOID
-            amount = -rotation * math.pi / 180
+        shifted = self.held_keys[key.LSHIFT] or self.held_keys[key.RSHIFT]
 
-        elif self.held_keys[key.E]:
-            self.robot.rotation += rotation
-            action_type = ActionType.ROTATION
-            direction = Direction.VOID
-            amount = rotation * math.pi / 180
+        if shifted:
+            distance *= 0.25
+        else:
+            if self.held_keys[key.Q]:
+                self.robot.rotation -= rotation
+                action_type = ActionType.ROTATION
+                direction = Direction.VOID
+                amount = -math.radians(rotation)
 
-        elif self.held_keys[key.W]:
+            elif self.held_keys[key.E]:
+                self.robot.rotation += rotation
+                action_type = ActionType.ROTATION
+                direction = Direction.VOID
+                amount = math.radians(rotation)
+
+        if self.held_keys[key.W]:
             self.robot.x += distance * x_mult
             self.robot.y += distance * y_mult
             action_type = ActionType.MOVEMENT
@@ -186,7 +188,7 @@ class Application(pyglet.window.Window):
             direction = Direction.HORIZONTAL
             amount = distance / self.pixel_per_meter
 
-        if amount is not 0:
+        if amount != 0:
             self.add_movement(amount, action_type, direction, (position, angle))
 
     def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple):
@@ -198,9 +200,9 @@ class Application(pyglet.window.Window):
                 if previous.action is action_type and same_direction:
                     movement = self.movements.pop(-1) + movement
 
-            if movement.amount is not 0:
+            if movement.amount != 0:
                 self.movements.append(movement)
-                self.update_console()
+            self.update_console()
 
     def on_render(self, dt: float):
         self.clear()
@@ -221,7 +223,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
         [
             code.append(movement.to_code())
             for movement in self.movements
-            if movement.action != ActionType.VOID
+            if movement.action is not ActionType.VOID
         ]
         code.append(
             ".build();"
