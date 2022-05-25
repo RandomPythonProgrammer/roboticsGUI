@@ -292,6 +292,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                     self.movements.clear()
                     self.setup = False
                     self.robot.opacity = 200
+                    self.starting_position = self.center_x, self.center_y, 0
                     self.update_console()
 
             elif symbol == key.SPACE:
