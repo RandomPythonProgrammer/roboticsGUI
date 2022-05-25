@@ -87,6 +87,8 @@ class Application(pyglet.window.Window):
         with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as config:
             self.settings = json.load(config)
         self.set_caption("RoboticsGUI")
+        path = os.path.join(os.path.dirname(__file__), 'resources/icon.png')
+        self.set_icon(pyglet.image.load(path))
 
         # initialize field variables
         self.speed = self.settings['robot_speed']
@@ -219,15 +221,16 @@ class Application(pyglet.window.Window):
 drive.setPoseEstimate(new Pose2d({x}, {y}, {-math.radians(rotation)}));
 TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
     """
-        code = []
-        [
-            code.append(movement.to_code())
+        code = [
+            movement.to_code()
             for movement in self.movements
             if movement.action is not ActionType.VOID
         ]
+
         code.append(
             ".build();"
         )
+
         return header + "\n\t".join(code) + "\ndrive.followTrajectorySequence(trajectory);"
 
     def get_text(self):
