@@ -130,7 +130,7 @@ class Application(pyglet.window.Window):
         angle = self.robot.rotation
         position = self.robot.position
 
-        rotation = self.robot.rotation * math.pi / 180
+        rotation = math.radians(self.robot.rotation)
         x_mult = math.sin(rotation)
         y_mult = math.cos(rotation)
 
@@ -216,7 +216,8 @@ class Application(pyglet.window.Window):
 
     def get_code(self):
         x, y, rotation = self.starting_position
-        x, y = ((x - self.center_x) / self.pixel_per_meter) * 39.37, ((y - self.center_y) / self.pixel_per_meter) * 39.37
+        x, y = ((x - self.center_x) / self.pixel_per_meter) * 39.37, (
+                (y - self.center_y) / self.pixel_per_meter) * 39.37
         header = f"""SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 drive.setPoseEstimate(new Pose2d({x}, {y}, {-math.radians(rotation)}));
 TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
