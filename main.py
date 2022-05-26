@@ -54,7 +54,7 @@ class Movement:
         if self.action == ActionType.MOVEMENT:
             if self.direction == Direction.VERTICAL:
                 if self.amount > 0:
-                    return f".forwards({round(self.amount * 39.37, 4)})"
+                    return f".forward({round(self.amount * 39.37, 4)})"
                 elif self.amount < 0:
                     return f".back({round(abs(self.amount) * 39.37, 4)})"
             elif self.direction == Direction.HORIZONTAL:
