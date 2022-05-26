@@ -28,43 +28,43 @@ class Movement:
         self.state = state
 
     def __repr__(self):
-        if self.action is ActionType.MOVEMENT:
-            if self.direction is Direction.VERTICAL:
+        if self.action == ActionType.MOVEMENT:
+            if self.direction == Direction.VERTICAL:
                 if self.amount > 0:
                     return f"move forwards {abs(self.amount)}"
                 elif self.amount < 0:
                     return f"move backwards {abs(self.amount)}"
-            elif self.direction is Direction.HORIZONTAL:
+            elif self.direction == Direction.HORIZONTAL:
                 if self.amount > 0:
                     return f"move right {abs(self.amount)}"
                 elif self.amount < 0:
                     return f"move left {abs(self.amount)}"
 
-        elif self.action is ActionType.ROTATION:
+        elif self.action == ActionType.ROTATION:
             if self.amount > 0:
                 return f"turn right {round(math.degrees(abs(self.amount)), 4)}"
             elif self.amount < 0:
                 return f"turn left {round(math.degrees(abs(self.amount)), 4)}"
-        elif self.action is ActionType.SLEEP:
+        elif self.action == ActionType.SLEEP:
             return f"wait {abs(self.amount)}"
 
         return "[Error]: " + str(self.amount)
 
     def to_code(self):
-        if self.action is ActionType.MOVEMENT:
-            if self.direction is Direction.VERTICAL:
+        if self.action == ActionType.MOVEMENT:
+            if self.direction == Direction.VERTICAL:
                 if self.amount > 0:
                     return f".forwards({round(self.amount * 39.37, 4)})"
                 elif self.amount < 0:
                     return f".back({round(abs(self.amount) * 39.37, 4)})"
-            elif self.direction is Direction.HORIZONTAL:
+            elif self.direction == Direction.HORIZONTAL:
                 if self.amount > 0:
                     return f".strafeRight({round(self.amount * 39.37, 4)})"
                 elif self.amount < 0:
                     return f".strafeLeft({round(abs(self.amount) * 39.37, 4)})"
-        elif self.action is ActionType.ROTATION:
+        elif self.action == ActionType.ROTATION:
             return f".turn({-self.amount})"
-        elif self.action is ActionType.SLEEP:
+        elif self.action == ActionType.SLEEP:
             return f".waitSeconds({self.amount})"
 
     def __add__(self, other):
@@ -130,7 +130,7 @@ class Application(pyglet.window.Window):
         angle = self.robot.rotation
         position = self.robot.position
 
-        rotation = math.radians(self.robot.rotation)
+        rotation = self.robot.rotation * math.pi / 180
         x_mult = math.sin(rotation)
         y_mult = math.cos(rotation)
 
@@ -198,8 +198,8 @@ class Application(pyglet.window.Window):
             movement = Movement(action_type, direction, amount, state)
             if len(self.movements) > 0:
                 previous = self.movements[-1]
-                same_direction = previous.direction is direction
-                if previous.action is action_type and same_direction:
+                same_direction = previous.direction == direction
+                if previous.action == action_type and same_direction:
                     movement = self.movements.pop(-1) + movement
 
             if movement.amount != 0:
@@ -217,7 +217,7 @@ class Application(pyglet.window.Window):
     def get_code(self):
         x, y, rotation = self.starting_position
         x, y = ((x - self.center_x) / self.pixel_per_meter) * 39.37, (
-                (y - self.center_y) / self.pixel_per_meter) * 39.37
+                    (y - self.center_y) / self.pixel_per_meter) * 39.37
         header = f"""SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 drive.setPoseEstimate(new Pose2d({x}, {y}, {-math.radians(rotation)}));
 TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
@@ -225,7 +225,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
         code = [
             movement.to_code()
             for movement in self.movements
-            if movement.action is not ActionType.VOID
+            if movement.action != ActionType.VOID
         ]
 
         code.append(
@@ -235,7 +235,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
         return header + "\n\t".join(code) + "\ndrive.followTrajectorySequence(trajectory);"
 
     def get_text(self):
-        return [str(line) for line in self.movements if line.action is not ActionType.VOID]
+        return [str(line) for line in self.movements if line.action != ActionType.VOID]
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.console_box.x <= x <= self.console_box.x + self.console_box.width:
@@ -250,7 +250,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
         if modifiers & key.MOD_SHIFT:
             radians = math.radians(self.robot.rotation)
-            if symbol is key.Q:
+            if symbol == key.Q:
                 new_angle = math.degrees(round((radians - (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4))
                 self.add_movement(
                     -math.radians(abs(angle - new_angle)),
@@ -258,7 +258,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 )
                 self.robot.rotation = new_angle
 
-            elif symbol is key.E:
+            elif symbol == key.E:
                 new_angle = math.degrees(round((radians + (math.pi / 4)) / (math.pi / 4)) * (math.pi / 4))
                 self.add_movement(
                     math.radians(abs(angle - new_angle)),
@@ -266,11 +266,11 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 )
                 self.robot.rotation = new_angle
 
-            elif symbol is key.R:
+            elif symbol == key.R:
                 self.add_movement(1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
         else:
-            if symbol is key.P and modifiers & key.MOD_ACCEL:
+            if symbol == key.P and modifiers & key.MOD_ACCEL:
                 try:
                     line = "-" * os.get_terminal_size().columns
                 except OSError:
@@ -278,13 +278,13 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
                 print(line + "\n" + self.get_code() + "\n" + line)
 
-            elif symbol is key.Z and modifiers & key.MOD_ACCEL:
+            elif symbol == key.Z and modifiers & key.MOD_ACCEL:
                 if len(self.movements) > 0:
                     movement = self.movements.pop(-1)
                     self.robot.position, self.robot.rotation = movement.state
                     self.update_console()
 
-            elif symbol is key.C and modifiers & key.MOD_ACCEL:
+            elif symbol == key.C and modifiers & key.MOD_ACCEL:
                 if len(self.movements) > 0:
                     self.robot.rotation = 0
                     self.robot.x = self.center_x
@@ -292,19 +292,20 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                     self.movements.clear()
                     self.setup = False
                     self.robot.opacity = 200
+                    self.starting_position = self.center_x, self.center_y, 0
                     self.update_console()
 
-            elif symbol is key.SPACE:
+            elif symbol == key.SPACE:
                 self.movements.append(
                     Movement(ActionType.VOID, Direction.VOID, 0, (self.robot.position, self.robot.rotation))
                 )
 
-            elif symbol is key.ENTER:
+            elif symbol == key.ENTER:
                 self.setup = True
                 self.robot.opacity = 255
                 self.starting_position = self.robot.x, self.robot.y, self.robot.rotation
 
-            elif symbol is key.R:
+            elif symbol == key.R:
                 self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
     def update_console(self):
