@@ -16,3 +16,5 @@ Space: separates movements
 Ctrl + Z: undo
 Ctrl + C: reset
 Ctrl + P: generate code
+
+Please report any bugs.
