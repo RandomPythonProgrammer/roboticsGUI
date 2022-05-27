@@ -48,7 +48,7 @@ class Movement:
         self.amount = amount
 
         try:
-            amount = round(amount, 4)
+            self.amount = round(amount, 4)
         except TypeError:
             pass
 
