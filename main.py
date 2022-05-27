@@ -2,7 +2,7 @@ import json
 import math
 import os
 from enum import Enum
-
+import tkinter
 import pyglet
 from pyglet.window import key
 
@@ -12,6 +12,7 @@ class ActionType(Enum):
     ROTATION = 0
     MOVEMENT = 1
     SLEEP = 2
+    FUNCTION = 3
 
 
 class Direction(Enum):
@@ -20,11 +21,37 @@ class Direction(Enum):
     VERTICAL = 1
 
 
+class FunctionDialog(tkinter.Frame):
+    def __init__(self, root: tkinter.Tk):
+        super(FunctionDialog, self).__init__()
+        self.label = tkinter.Label(text="Enter the name of the function to add:")
+        self.label.pack()
+        self.text_box = tkinter.Entry()
+        self.text_box.pack()
+        self.button = tkinter.Button(text="Add", command=self.on_stop)
+        self.button.pack()
+        self.root = root
+        root.title('Add Function')
+        path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
+        root.iconphoto(False, tkinter.PhotoImage(file=path))
+        self.running = True
+
+    def on_stop(self):
+        self.running = False
+        self.root.quit()
+
+
 class Movement:
-    def __init__(self, action: ActionType, direction: Direction, amount: float, state: tuple):
+    def __init__(self, action: ActionType, direction: Direction, amount: any, state: tuple):
         self.action = action
         self.direction = direction
-        self.amount = round(amount, 4)
+        self.amount = amount
+
+        try:
+            amount = round(amount, 4)
+        except TypeError:
+            pass
+
         self.state = state
 
     def __repr__(self):
@@ -45,8 +72,12 @@ class Movement:
                 return f"turn right {round(math.degrees(abs(self.amount)), 4)}"
             elif self.amount < 0:
                 return f"turn left {round(math.degrees(abs(self.amount)), 4)}"
+
         elif self.action == ActionType.SLEEP:
             return f"wait {abs(self.amount)}"
+
+        elif self.action == ActionType.FUNCTION:
+            return f"execute {self.amount}"
 
         return "[Error]: " + str(self.amount)
 
@@ -66,6 +97,8 @@ class Movement:
             return f".turn({-self.amount})"
         elif self.action == ActionType.SLEEP:
             return f".waitSeconds({self.amount})"
+        elif self.action == ActionType.FUNCTION:
+            return f".addTemporalMarker(() -> {self.amount}())"
 
     def __add__(self, other):
         return Movement(self.action, self.direction, self.amount + other.amount, self.state)
@@ -87,7 +120,7 @@ class Application(pyglet.window.Window):
         with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as config:
             self.settings = json.load(config)
         self.set_caption("RoboticsGUI")
-        path = os.path.join(os.path.dirname(__file__), 'resources/icon.png')
+        path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
         self.set_icon(pyglet.image.load(path))
 
         # initialize field variables
@@ -97,7 +130,7 @@ class Application(pyglet.window.Window):
         self.pixel_per_meter = self.height / (self.tileSize * 6)
         self.backgroundBatch = pyglet.graphics.Batch()
         self.foregroundBatch = pyglet.graphics.Batch()
-        path = os.path.join(os.path.dirname(__file__), 'resources/field.png')
+        path = os.path.join(os.path.dirname(__file__), 'resources', 'field.png')
         self.background = pyglet.sprite.Sprite(pyglet.image.load(path), 0, 0, batch=self.backgroundBatch)
         self.field_size = round(self.tileSize * self.pixel_per_meter * 6)
         self.background.scale_x = self.field_size / self.background.width
@@ -106,7 +139,7 @@ class Application(pyglet.window.Window):
         # initialize objects
         width = self.settings['robot_width'] * self.pixel_per_meter
         length = self.settings['robot_length'] * self.pixel_per_meter
-        path = os.path.join(os.path.dirname(__file__), "resources/robot.png")
+        path = os.path.join(os.path.dirname(__file__), 'resources', 'robot.png')
         image = pyglet.image.load(path)
         image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
         self.center_x = self.center_y = self.field_size / 2
@@ -199,10 +232,10 @@ class Application(pyglet.window.Window):
             if len(self.movements) > 0:
                 previous = self.movements[-1]
                 same_direction = previous.direction == direction
-                if previous.action == action_type and same_direction:
+                if previous.action == action_type and same_direction and action_type != ActionType.FUNCTION:
                     movement = self.movements.pop(-1) + movement
 
-            if movement.amount != 0:
+            if movement.action == ActionType.FUNCTION or movement.amount != 0:
                 self.movements.append(movement)
             self.update_console()
 
@@ -307,6 +340,16 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
             elif symbol == key.R:
                 self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
+
+            elif symbol == key.F:
+                root = tkinter.Tk()
+                dialog = FunctionDialog(root)
+                root.mainloop()
+                func_name = dialog.text_box.get()
+                root.destroy()
+                self.add_movement(
+                    func_name, ActionType.FUNCTION, Direction.VOID, (self.robot.position, self.robot.rotation)
+                )
 
     def update_console(self):
         lines = self.get_text()
