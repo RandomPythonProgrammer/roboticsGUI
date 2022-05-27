@@ -341,7 +341,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
             elif symbol == key.R:
                 self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
-            elif symbol == key.F:
+            elif symbol == key.F and self.setup:
                 root = tkinter.Tk()
                 dialog = FunctionDialog(root)
                 root.mainloop()
