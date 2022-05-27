@@ -25,10 +25,14 @@ class Direction(Enum):
 class FunctionDialog(tkinter.Frame):
     def __init__(self, root: tkinter.Tk):
         super(FunctionDialog, self).__init__()
-        self.label = tkinter.Label(text="Enter the name of the function to add:")
-        self.label.pack()
-        self.text_box = tkinter.Entry()
-        self.text_box.pack()
+        self.func_label = tkinter.Label(text='Enter the name of the function to add:')
+        self.func_label.pack()
+        self.func_box = tkinter.Entry()
+        self.func_box.pack()
+        self.arg_label = tkinter.Label(text='Arguments, separated by commas')
+        self.arg_label.pack()
+        self.arg_box = tkinter.Entry()
+        self.arg_box.pack()
         self.button = tkinter.Button(text="Add", command=self.on_stop)
         self.button.pack()
         self.root = root
@@ -43,10 +47,11 @@ class FunctionDialog(tkinter.Frame):
 
 
 class Movement:
-    def __init__(self, action: ActionType, direction: Direction, amount: any, state: tuple):
+    def __init__(self, action: ActionType, direction: Direction, amount: any, state: tuple, arguments=''):
         self.action = action
         self.direction = direction
         self.amount = amount
+        self.arguments = arguments
 
         try:
             self.amount = round(amount, 4)
@@ -78,7 +83,7 @@ class Movement:
             return f"wait {abs(self.amount)}"
 
         elif self.action == ActionType.FUNCTION:
-            return f"execute {self.amount}"
+            return f"execute {self.amount} ({self.arguments})"
 
         return "[Error]: " + str(self.amount)
 
@@ -99,7 +104,7 @@ class Movement:
         elif self.action == ActionType.SLEEP:
             return f".waitSeconds({self.amount})"
         elif self.action == ActionType.FUNCTION:
-            return f".addTemporalMarker(() -> {self.amount}())"
+            return f".addTemporalMarker(() -> {self.amount}({self.arguments}))"
 
     def __add__(self, other):
         return Movement(self.action, self.direction, self.amount + other.amount, self.state)
@@ -227,9 +232,9 @@ class Application(pyglet.window.Window):
         if amount != 0:
             self.add_movement(amount, action_type, direction, (position, angle))
 
-    def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple):
+    def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple, arguments=''):
         if self.setup:
-            movement = Movement(action_type, direction, amount, state)
+            movement = Movement(action_type, direction, amount, state, arguments)
             if len(self.movements) > 0:
                 previous = self.movements[-1]
                 same_direction = previous.direction == direction
@@ -347,10 +352,14 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 dialog = FunctionDialog(root)
                 root.mainloop()
                 try:
-                    func_name = dialog.text_box.get()
+                    func_name = dialog.func_box.get()
+                    arguments = dialog.arg_box.get()
                     if func_name:
                         self.add_movement(
-                            func_name.replace(' ', ''), ActionType.FUNCTION, Direction.VOID, (self.robot.position, self.robot.rotation)
+                            func_name.replace(' ', ''),
+                            ActionType.FUNCTION, Direction.VOID,
+                            (self.robot.position, self.robot.rotation),
+                            arguments
                         )
                     root.destroy()
                 except _tkinter.TclError:
