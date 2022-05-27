@@ -1,3 +1,4 @@
+import _tkinter
 import json
 import math
 import os
@@ -345,11 +346,15 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 root = tkinter.Tk()
                 dialog = FunctionDialog(root)
                 root.mainloop()
-                func_name = dialog.text_box.get()
-                root.destroy()
-                self.add_movement(
-                    func_name, ActionType.FUNCTION, Direction.VOID, (self.robot.position, self.robot.rotation)
-                )
+                try:
+                    func_name = dialog.text_box.get()
+                    if func_name:
+                        self.add_movement(
+                            func_name.replace(' ', ''), ActionType.FUNCTION, Direction.VOID, (self.robot.position, self.robot.rotation)
+                        )
+                    root.destroy()
+                except _tkinter.TclError:
+                    pass
 
     def update_console(self):
         lines = self.get_text()
