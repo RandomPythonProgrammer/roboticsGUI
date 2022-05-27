@@ -28,4 +28,8 @@ This program generates road runner code for you, all you have to do is move the 
   
   Ctrl + P: generate code
 
+
+You can configure the size of the robot and the speed that it moves on the screen in the config.json file.
+
+
 Please report any bugs.
