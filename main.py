@@ -104,7 +104,7 @@ class Movement:
         elif self.action == ActionType.SLEEP:
             return f".waitSeconds({self.amount})"
         elif self.action == ActionType.FUNCTION:
-            return f".addTemporalMarker(() -> {self.amount}({self.arguments}))"
+            return f".addDisplacementMarker(() -> {self.amount}({self.arguments}))"
 
     def __add__(self, other):
         return Movement(self.action, self.direction, self.amount + other.amount, self.state)
