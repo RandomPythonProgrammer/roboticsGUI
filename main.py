@@ -152,6 +152,7 @@ class Application(pyglet.window.Window):
         self.robot = pyglet.sprite.Sprite(image, self.center_x, self.center_y, batch=self.foregroundBatch)
         self.robot.scale_x, self.robot.scale_y = width / self.robot.width, length / self.robot.height
         self.robot.opacity = 200
+        self.robot.rotation = 90
         self.starting_position = self.center_x, self.center_y, 0
 
         # storage variables
@@ -169,7 +170,7 @@ class Application(pyglet.window.Window):
         angle = self.robot.rotation
         position = self.robot.position
 
-        rotation = self.robot.rotation * math.pi / 180
+        rotation = math.radians(self.robot.rotation)
         x_mult = math.sin(rotation)
         y_mult = math.cos(rotation)
 
@@ -258,7 +259,7 @@ class Application(pyglet.window.Window):
         x, y = ((x - self.center_x) / self.pixel_per_meter) * 39.37, (
                     (y - self.center_y) / self.pixel_per_meter) * 39.37
         header = f"""SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
-drive.setPoseEstimate(new Pose2d({x}, {y}, {-math.radians(rotation)}));
+drive.setPoseEstimate(new Pose2d({x}, {y}, {math.radians(-rotation + 90)}));
 TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
     """
         code = [
