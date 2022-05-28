@@ -111,13 +111,9 @@ class Movement:
 
 
 class Application(pyglet.window.Window):
-    def __init__(self):
-        super(Application, self).__init__()
+    def __init__(self, width: int, height: int):
+        super(Application, self).__init__(width = width, height = height)
         # initialize window and application
-        display = pyglet.canvas.Display().get_default_screen()
-        x_mult, y_mult = display.width / 16, display.height / 9
-        mult = round(min(x_mult, y_mult) * 0.75)
-        self.set_size(16 * mult, 9 * mult)
         self.set_location(0, 0)
         self.dragging = False
         self.drag_direction = None
@@ -378,7 +374,11 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
 
 if __name__ == '__main__':
-    app = Application()
+    display = pyglet.canvas.Display().get_default_screen()
+    x_mult, y_mult = display.width / 16, display.height / 9
+    mult = round(min(x_mult, y_mult) * 0.75)
+    app = Application(16 * mult, 9 * mult)
+
     # start the event loop and render loop
     pyglet.clock.schedule(app.on_render)
     pyglet.clock.schedule(app.on_update)
