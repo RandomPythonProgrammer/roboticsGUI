@@ -2,8 +2,9 @@ import _tkinter
 import json
 import math
 import os
-from enum import Enum
 import tkinter
+from enum import Enum
+
 import pyglet
 from pyglet.window import key
 
@@ -112,9 +113,9 @@ class Movement:
 
 class Application(pyglet.window.Window):
     def __init__(self, width: int, height: int):
-        super(Application, self).__init__(width = width, height = height)
+        super(Application, self).__init__(width=width, height=height)
+
         # initialize window and application
-        self.set_location(0, 0)
         self.dragging = False
         self.drag_direction = None
         self.setup = False
@@ -253,7 +254,7 @@ class Application(pyglet.window.Window):
     def get_code(self):
         x, y, rotation = self.starting_position
         x, y = ((x - self.center_x) / self.pixel_per_meter) * 39.37, (
-                    (y - self.center_y) / self.pixel_per_meter) * 39.37
+                (y - self.center_y) / self.pixel_per_meter) * 39.37
         header = f"""SampleMecanumDrive drive = new SampleMecanumDrive(hardwareMap);
 drive.setPoseEstimate(new Pose2d({x}, {y}, {math.radians(-rotation + 90)}));
 TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEstimate())
