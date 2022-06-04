@@ -246,6 +246,8 @@ class Application(pyglet.window.Window):
     def on_render(self, dt: float):
         self.clear()
         self.backgroundBatch.draw()
+        for line in self.settings['lines']:
+            self.line_to(line['length'], line['angle'], line['width'], tuple(line['color'])).draw()
         self.foregroundBatch.draw()
 
     def on_key_press(self, symbol, modifiers):
@@ -372,6 +374,12 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
         self.console.insert_text(0, text, dict(
             color=(255, 255, 255, 255)
         ))
+
+    def line_to(self, length: float, angle: float, width: float, color: tuple) -> pyglet.shapes.Line:
+        total_angle = self.robot.rotation + angle
+        x1, x2 = self.robot.x, self.robot.x + length * math.sin(math.radians(total_angle))
+        y1, y2 = self.robot.y, self.robot.y + length * math.cos(math.radians(total_angle))
+        return pyglet.shapes.Line(x1, y1, x2, y2, width, color)
 
 
 if __name__ == '__main__':
