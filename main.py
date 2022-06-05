@@ -179,7 +179,7 @@ class Application(pyglet.window.Window):
             circle.opacity = 100
             self.circles.append(circle)
         radius = ((self.robot.width ** 2 + self.robot.height ** 2) ** 0.5) / 2
-        turn_circle = pyglet.shapes.Circle(self.robot.x, self.robot.y, radius, color=(200, 100, 100))
+        turn_circle = pyglet.shapes.Circle(self.robot.x, self.robot.y, radius, color=(139, 54, 54))
         turn_circle.opacity = 150
         self.circles.append(turn_circle)
 
