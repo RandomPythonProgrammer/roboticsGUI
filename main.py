@@ -37,6 +37,9 @@ class FunctionDialog(tkinter.Frame):
         self.button = tkinter.Button(text="Add", command=self.on_stop)
         self.button.pack()
         self.root = root
+
+        self.func_box.focus()
+
         root.title('Add Function')
         path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
         root.iconphoto(False, tkinter.PhotoImage(file=path))
