@@ -2,7 +2,8 @@
   "robot_width": 0.310,
   "robot_length": 0.390,
   "robot_speed": 1,
-  "robot_turn_speed": 60,
+  "robot_turn_speed": 45,
+  "font_size": 20,
   "lines": [
     {"length": 0, "angle": 0, "width": 0, "color": [0, 0, 0]}
   ]

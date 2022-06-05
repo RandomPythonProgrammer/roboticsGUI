@@ -401,7 +401,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
             index = lines.index(line)
             text += f"{index + 1}: {line}\n"
         self.console.insert_text(0, text, dict(
-            color=(255, 255, 255, 255)
+            color=(255, 255, 255, 255), font_size=self.settings['font_size']
         ))
 
     def line_to(self, length: float, angle: float, width: float, color: tuple) -> pyglet.shapes.Line:
