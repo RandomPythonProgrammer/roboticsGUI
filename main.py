@@ -166,7 +166,8 @@ class Application(pyglet.window.Window):
         )
         self.console_box.x, self.console_box.y = self.field_size, 0
 
-        #Circles and lines
+        # Circles and lines
+        self.mode = 0
         self.circles = []
         for line in self.settings['lines']:
             circle = pyglet.shapes.Circle(
@@ -265,11 +266,13 @@ class Application(pyglet.window.Window):
     def on_render(self, dt: float):
         self.clear()
         self.backgroundBatch.draw()
-        for circle in self.circles:
-            circle.position = self.robot.position
-            circle.draw()
-        for line in self.settings['lines']:
-            self.line_to(line['length'], line['angle'], line['width'], tuple(line['color'])).draw()
+        if self.mode > 0:
+            if self.mode == 2:
+                for circle in self.circles:
+                    circle.position = self.robot.position
+                    circle.draw()
+            for line in self.settings['lines']:
+                self.line_to(line['length'], line['angle'], line['width'], tuple(line['color'])).draw()
         self.foregroundBatch.draw()
 
     def on_key_press(self, symbol, modifiers):
@@ -385,6 +388,10 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                     root.destroy()
                 except _tkinter.TclError:
                     pass
+            elif symbol == key.C:
+                self.mode += 1
+                if self.mode > 2:
+                    self.mode = 0
 
     def update_console(self):
         lines = self.get_text()
