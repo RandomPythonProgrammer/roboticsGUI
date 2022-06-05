@@ -154,6 +154,13 @@ class Application(pyglet.window.Window):
         self.robot.opacity = 200
         self.robot.rotation = 90
         self.starting_position = self.center_x, self.center_y, 0
+        self.position_label = pyglet.text.Label(
+            text=f"Pose: {self.calculate_position()}",
+            font_size=self.settings['font_size'],
+            x=0, y=0,
+            color=(255, 0, 0, 150),
+            bold=True
+        )
 
         # storage variables
         self.movements = []
@@ -182,6 +189,12 @@ class Application(pyglet.window.Window):
         turn_circle = pyglet.shapes.Circle(self.robot.x, self.robot.y, radius, color=(139, 54, 54))
         turn_circle.opacity = 150
         self.circles.append(turn_circle)
+
+    def calculate_position(self):
+        x, y = ((self.robot.x - self.center_x) / self.pixel_per_meter) * 39.37, (
+                (self.robot.y - self.center_y) / self.pixel_per_meter) * 39.37
+        rotation = math.radians(-self.robot.rotation + 90)
+        return round(x, 4), round(y, 4), round(rotation % (math.pi*2), 4)
 
     def on_update(self, dt: float):
         angle = self.robot.rotation
@@ -275,6 +288,8 @@ class Application(pyglet.window.Window):
             for line in self.settings['lines']:
                 self.line_to(line['length'], line['angle'], line['width'], tuple(line['color'])).draw()
         self.foregroundBatch.draw()
+        self.position_label.text = f"Pose: {self.calculate_position()}"
+        self.position_label.draw()
 
     def on_key_press(self, symbol, modifiers):
         self.held_keys[symbol] = True
