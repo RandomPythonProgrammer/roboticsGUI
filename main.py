@@ -166,6 +166,22 @@ class Application(pyglet.window.Window):
         )
         self.console_box.x, self.console_box.y = self.field_size, 0
 
+        #Circles and lines
+        self.circles = []
+        for line in self.settings['lines']:
+            circle = pyglet.shapes.Circle(
+                self.robot.x,
+                self.robot.y,
+                line['length'] * self.pixel_per_meter,
+                color=line['color']
+            )
+            circle.opacity = 100
+            self.circles.append(circle)
+        radius = ((self.robot.width ** 2 + self.robot.height ** 2) ** 0.5) / 2
+        turn_circle = pyglet.shapes.Circle(self.robot.x, self.robot.y, radius, color=(200, 100, 100))
+        turn_circle.opacity = 150
+        self.circles.append(turn_circle)
+
     def on_update(self, dt: float):
         angle = self.robot.rotation
         position = self.robot.position
@@ -249,6 +265,9 @@ class Application(pyglet.window.Window):
     def on_render(self, dt: float):
         self.clear()
         self.backgroundBatch.draw()
+        for circle in self.circles:
+            circle.position = self.robot.position
+            circle.draw()
         for line in self.settings['lines']:
             self.line_to(line['length'], line['angle'], line['width'], tuple(line['color'])).draw()
         self.foregroundBatch.draw()
