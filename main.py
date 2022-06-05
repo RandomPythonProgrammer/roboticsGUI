@@ -377,8 +377,9 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
     def line_to(self, length: float, angle: float, width: float, color: tuple) -> pyglet.shapes.Line:
         total_angle = self.robot.rotation + angle
-        x1, x2 = self.robot.x, self.robot.x + length * math.sin(math.radians(total_angle))
-        y1, y2 = self.robot.y, self.robot.y + length * math.cos(math.radians(total_angle))
+        pixel_length = length * self.pixel_per_meter
+        x1, x2 = self.robot.x, self.robot.x + pixel_length * math.sin(math.radians(total_angle))
+        y1, y2 = self.robot.y, self.robot.y + pixel_length * math.cos(math.radians(total_angle))
         return pyglet.shapes.Line(x1, y1, x2, y2, width, color)
 
 
