@@ -303,7 +303,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
     def on_mouse_scroll(self, x, y, scroll_x, scroll_y):
         if self.console_box.x <= x <= self.console_box.x + self.console_box.width:
-            self.console_box.y = min(max(self.console_box.y + scroll_y, 0),
+            self.console_box.y = min(max(self.console_box.y - scroll_y * self.settings['font_size'], 0),
                                      self.console_box.height - self.field_size / 4)
 
     def on_key_release(self, symbol, modifiers):
