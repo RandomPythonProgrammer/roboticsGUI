@@ -219,33 +219,34 @@ class Application(pyglet.window.Window):
                 direction = Direction.VOID
                 amount = math.radians(rotation)
 
-        if self.held_keys[key.W]:
-            self.robot.x += distance * x_mult
-            self.robot.y += distance * y_mult
-            action_type = ActionType.MOVEMENT
-            direction = Direction.VERTICAL
-            amount = distance / self.pixel_per_meter
+        if action_type != ActionType.ROTATION:
+            if self.held_keys[key.W]:
+                self.robot.x += distance * x_mult
+                self.robot.y += distance * y_mult
+                action_type = ActionType.MOVEMENT
+                direction = Direction.VERTICAL
+                amount = distance / self.pixel_per_meter
 
-        elif self.held_keys[key.S]:
-            self.robot.x -= distance * x_mult
-            self.robot.y -= distance * y_mult
-            action_type = ActionType.MOVEMENT
-            direction = Direction.VERTICAL
-            amount = -distance / self.pixel_per_meter
+            elif self.held_keys[key.S]:
+                self.robot.x -= distance * x_mult
+                self.robot.y -= distance * y_mult
+                action_type = ActionType.MOVEMENT
+                direction = Direction.VERTICAL
+                amount = -distance / self.pixel_per_meter
 
-        elif self.held_keys[key.A]:
-            self.robot.x -= distance * p_x_mult
-            self.robot.y -= distance * p_y_mult
-            action_type = ActionType.MOVEMENT
-            direction = Direction.HORIZONTAL
-            amount = -distance / self.pixel_per_meter
+            elif self.held_keys[key.A]:
+                self.robot.x -= distance * p_x_mult
+                self.robot.y -= distance * p_y_mult
+                action_type = ActionType.MOVEMENT
+                direction = Direction.HORIZONTAL
+                amount = -distance / self.pixel_per_meter
 
-        elif self.held_keys[key.D]:
-            self.robot.x += distance * p_x_mult
-            self.robot.y += distance * p_y_mult
-            action_type = ActionType.MOVEMENT
-            direction = Direction.HORIZONTAL
-            amount = distance / self.pixel_per_meter
+            elif self.held_keys[key.D]:
+                self.robot.x += distance * p_x_mult
+                self.robot.y += distance * p_y_mult
+                action_type = ActionType.MOVEMENT
+                direction = Direction.HORIZONTAL
+                amount = distance / self.pixel_per_meter
 
         if amount != 0:
             self.add_movement(amount, action_type, direction, (position, angle))
