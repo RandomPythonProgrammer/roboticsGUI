@@ -136,7 +136,7 @@ class Application(pyglet.window.Window):
         self.pixel_per_meter = self.height / (self.tileSize * 6)
         self.backgroundBatch = pyglet.graphics.Batch()
         self.foregroundBatch = pyglet.graphics.Batch()
-        path = os.path.join(os.path.dirname(__file__), 'resources', 'field.png')
+        path = os.path.join(os.path.dirname(__file__), 'resources', 'field2.png')
         self.background = pyglet.sprite.Sprite(pyglet.image.load(path), 0, 0, batch=self.backgroundBatch)
         self.field_size = round(self.tileSize * self.pixel_per_meter * 6)
         self.background.scale_x = self.field_size / self.background.width
