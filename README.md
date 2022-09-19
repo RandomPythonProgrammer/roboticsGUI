@@ -12,6 +12,8 @@ This program generates road runner code for you, all you have to do is move the 
   S: move back, hold shift for precision
   
   D: move right, hold shift for precision
+  
+  T: Use a line to or line to linear heading
 
 
   F: add a function
@@ -27,9 +29,12 @@ This program generates road runner code for you, all you have to do is move the 
   Ctrl + C: reset
   
   Ctrl + P: generate code
+  
+  M: Switches between Pose and Mouse Position
 
 
 You can configure the size of the robot and the speed that it moves on the screen in the config.json file.
+Units are in inches; however, the program uses meters internally.
 
 
 Please report any bugs.
