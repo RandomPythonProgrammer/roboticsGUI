@@ -21,6 +21,7 @@ class Direction(Enum):
     VOID = -1
     HORIZONTAL = 0
     VERTICAL = 1
+    POSITIONAL = 10
 
 
 class FunctionDialog(tkinter.Frame):
@@ -50,6 +51,29 @@ class FunctionDialog(tkinter.Frame):
         self.root.quit()
 
 
+class PositionDialog(tkinter.Frame):
+    def __init__(self, root: tkinter.Tk):
+        super(PositionDialog, self).__init__()
+        self.pos_label = tkinter.Label(text='Position to travel to (x, y, rotation [optional]):')
+        self.pos_label.pack()
+        self.pos_box = tkinter.Entry()
+        self.pos_box.pack()
+        self.button = tkinter.Button(text="Add", command=self.on_stop)
+        self.button.pack()
+        self.root = root
+
+        self.pos_box.focus()
+
+        root.title('Add Function')
+        path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
+        root.iconphoto(False, tkinter.PhotoImage(file=path))
+        self.running = True
+
+    def on_stop(self):
+        self.running = False
+        self.root.quit()
+
+
 class Movement:
     def __init__(self, action: ActionType, direction: Direction, amount: any, state: tuple, arguments=''):
         self.action = action
@@ -68,14 +92,19 @@ class Movement:
         if self.action == ActionType.MOVEMENT:
             if self.direction == Direction.VERTICAL:
                 if self.amount > 0:
-                    return f"move forwards {abs(self.amount)}"
+                    return f"move forwards {round(abs(self.amount * 39.37), 4)}"
                 elif self.amount < 0:
-                    return f"move backwards {abs(self.amount)}"
+                    return f"move backwards {round(abs(self.amount * 39.37), 4)}"
             elif self.direction == Direction.HORIZONTAL:
                 if self.amount > 0:
-                    return f"move right {abs(self.amount)}"
+                    return f"move right {round(abs(self.amount * 39.37), 4)}"
                 elif self.amount < 0:
-                    return f"move left {abs(self.amount)}"
+                    return f"move left {round(abs(self.amount * 39.37), 4)}"
+            elif self.direction == Direction.POSITIONAL:
+                if len(self.amount) == 2:
+                    return f"line to {self.amount[0] * 39.37}, {self.amount[1] * 39.37}"
+                elif len(self.amount) == 3:
+                    return f"line to {self.amount[0] * 39.37}, {self.amount[1] * 39.37}, heading {self.amount[2]}"
 
         elif self.action == ActionType.ROTATION:
             if self.amount > 0:
@@ -103,6 +132,12 @@ class Movement:
                     return f".strafeRight({round(self.amount * 39.37, 4)})"
                 elif self.amount < 0:
                     return f".strafeLeft({round(abs(self.amount) * 39.37, 4)})"
+            elif self.direction == Direction.POSITIONAL:
+                if len(self.amount) == 2:
+                    return f".lineTo(new Vector2d({self.amount}))"
+                elif len(self.amount) == 3:
+                    return f".lineToLinearHeading(new Pose2d({self.amount}))"
+
         elif self.action == ActionType.ROTATION:
             return f".turn({-self.amount})"
         elif self.action == ActionType.SLEEP:
@@ -143,8 +178,8 @@ class Application(pyglet.window.Window):
         self.background.scale_y = self.field_size / self.background.height
 
         # initialize objects
-        width = self.settings['robot_width'] * self.pixel_per_meter
-        length = self.settings['robot_length'] * self.pixel_per_meter
+        width = self.settings['robot_width'] * self.pixel_per_meter / 39.37
+        length = self.settings['robot_length'] * self.pixel_per_meter / 39.37
         path = os.path.join(os.path.dirname(__file__), 'resources', 'robot.png')
         image = pyglet.image.load(path)
         image.anchor_x, image.anchor_y = round(image.width / 2), round(image.height / 2)
@@ -180,7 +215,7 @@ class Application(pyglet.window.Window):
             circle = pyglet.shapes.Circle(
                 self.robot.x,
                 self.robot.y,
-                line['length'] * self.pixel_per_meter,
+                line['length'] / 39.37 * self.pixel_per_meter,
                 color=line['color']
             )
             circle.opacity = 100
@@ -267,11 +302,12 @@ class Application(pyglet.window.Window):
     def add_movement(self, amount: float, action_type: ActionType, direction: Direction, state: tuple, arguments=''):
         if self.setup:
             movement = Movement(action_type, direction, amount, state, arguments)
-            if len(self.movements) > 0:
-                previous = self.movements[-1]
-                same_direction = previous.direction == direction
-                if previous.action == action_type and same_direction and action_type != ActionType.FUNCTION:
-                    movement = self.movements.pop(-1) + movement
+            if direction != Direction.POSITIONAL:
+                if len(self.movements) > 0:
+                    previous = self.movements[-1]
+                    same_direction = previous.direction == direction
+                    if previous.action == action_type and same_direction and action_type != ActionType.FUNCTION:
+                        movement = self.movements.pop(-1) + movement
 
             if movement.action == ActionType.FUNCTION or movement.amount != 0:
                 self.movements.append(movement)
@@ -378,6 +414,34 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 self.movements.append(
                     Movement(ActionType.VOID, Direction.VOID, 0, (self.robot.position, self.robot.rotation))
                 )
+
+            elif symbol == key.T and self.setup:
+                root = tkinter.Tk()
+                dialog = PositionDialog(root)
+                root.mainloop()
+                try:
+                    position = dialog.pos_box.get()
+                    if position:
+                        items = position.replace(" ", "").split(",")
+                        x = round(float(items[0]) / 39.37, 4)
+                        y = round(float(items[1]) / 39.37, 4)
+                        rx = self.field_size / 2 + x * self.pixel_per_meter
+                        ry = self.field_size / 2 + y * self.pixel_per_meter
+                        r = None
+                        if len(items) == 3:
+                            r = math.radians(float(items[2]))
+
+                        self.robot.position = rx, ry
+                        self.add_movement(
+                            (x, y, r) if r is not None else (x, y),
+                            ActionType.MOVEMENT, Direction.POSITIONAL,
+                            (self.robot.position, self.robot.rotation)
+                        )
+                        if len(items) == 3:
+                            self.robot.rotation = (-float(items[2])) + 90
+                    root.destroy()
+                except _tkinter.TclError:
+                    pass
 
             elif symbol == key.ENTER:
                 self.setup = True
