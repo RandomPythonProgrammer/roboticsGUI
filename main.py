@@ -1,10 +1,10 @@
-import _tkinter
 import json
 import math
 import os
 import tkinter
 from enum import Enum
 
+import _tkinter
 import pyglet
 from pyglet.window import key
 
@@ -233,15 +233,15 @@ class Application(pyglet.window.Window):
         x, y = ((self.robot.x - self.center_x) / self.pixel_per_meter) * 39.37, (
                 (self.robot.y - self.center_y) / self.pixel_per_meter) * 39.37
         rotation = math.radians(-self.robot.rotation + 90)
-        return round(x, 4), round(y, 4), round(rotation % (math.pi*2), 4)
+        return round(x, 4), round(y, 4), round(rotation % (math.pi * 2), 4)
 
     def on_mouse_motion(self, x, y, dx, dy):
         self.mouse_pos = x, y
 
     def calculate_mouse_position(self):
         x, y = self.mouse_pos
-        return round((x - self.field_size/2) / self.pixel_per_meter * 39.37, 4),\
-               round((y - self.field_size/2) / self.pixel_per_meter * 39.37, 4)
+        return round((x - self.field_size / 2) / self.pixel_per_meter * 39.37, 4), \
+               round((y - self.field_size / 2) / self.pixel_per_meter * 39.37, 4)
 
     def on_update(self, dt: float):
         angle = self.robot.rotation
