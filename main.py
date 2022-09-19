@@ -176,6 +176,10 @@ class Application(pyglet.window.Window):
         self.field_size = round(self.tileSize * self.pixel_per_meter * 6)
         self.background.scale_x = self.field_size / self.background.width
         self.background.scale_y = self.field_size / self.background.height
+        self.mouse_pos_mode = False
+        self.mouse_pos = self.field_size / 2, self.field_size / 2
+        mx, my = self.mouse_pos
+        self.set_mouse_position(int(mx), int(my))
 
         # initialize objects
         width = self.settings['robot_width'] * self.pixel_per_meter / 39.37
@@ -193,7 +197,7 @@ class Application(pyglet.window.Window):
             text=f"Pose: {self.calculate_position()}",
             font_size=self.settings['font_size'],
             x=0, y=0,
-            color=(255, 0, 0, 150),
+            color=(0, 100, 0, 255),
             bold=True
         )
 
@@ -230,6 +234,14 @@ class Application(pyglet.window.Window):
                 (self.robot.y - self.center_y) / self.pixel_per_meter) * 39.37
         rotation = math.radians(-self.robot.rotation + 90)
         return round(x, 4), round(y, 4), round(rotation % (math.pi*2), 4)
+
+    def on_mouse_motion(self, x, y, dx, dy):
+        self.mouse_pos = x, y
+
+    def calculate_mouse_position(self):
+        x, y = self.mouse_pos
+        return round((x - self.field_size/2) / self.pixel_per_meter * 39.37, 4),\
+               round((y - self.field_size/2) / self.pixel_per_meter * 39.37, 4)
 
     def on_update(self, dt: float):
         angle = self.robot.rotation
@@ -324,7 +336,10 @@ class Application(pyglet.window.Window):
             for line in self.settings['lines']:
                 self.line_to(line['length'], line['angle'], line['width'], tuple(line['color'])).draw()
         self.foregroundBatch.draw()
-        self.position_label.text = f"Pose: {self.calculate_position()}"
+        if self.mouse_pos_mode:
+            self.position_label.text = f"Mouse Position: {self.calculate_mouse_position()}"
+        else:
+            self.position_label.text = f"Pose: {self.calculate_position()}"
         self.position_label.draw()
 
     def on_key_press(self, symbol, modifiers):
@@ -442,6 +457,14 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                     root.destroy()
                 except _tkinter.TclError:
                     pass
+
+            elif symbol == key.M:
+                if self.mouse_pos_mode:
+                    self.mouse_pos_mode = False
+                    self.position_label.color = (0, 100, 0, 255)
+                else:
+                    self.mouse_pos_mode = True
+                    self.position_label.color = (100, 0, 100, 255)
 
             elif symbol == key.ENTER:
                 self.setup = True
