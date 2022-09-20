@@ -102,9 +102,9 @@ class Movement:
                     return f"move left {round(abs(self.amount * 39.37), 4)}"
             elif self.direction == Direction.POSITIONAL:
                 if len(self.amount) == 2:
-                    return f"line to {self.amount[0] * 39.37}, {self.amount[1] * 39.37}"
+                    return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}"
                 elif len(self.amount) == 3:
-                    return f"line to {self.amount[0] * 39.37}, {self.amount[1] * 39.37}, heading {self.amount[2]}"
+                    return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}, heading {round(self.amount[2], 4)}"
 
         elif self.action == ActionType.ROTATION:
             if self.amount > 0:
