@@ -6,6 +6,7 @@ from enum import Enum
 import tkinter
 import _tkinter
 root = tkinter.Tk()
+root.withdraw()
 
 import pyglet
 from pyglet.window import key
@@ -50,7 +51,7 @@ class FunctionDialog(tkinter.Frame):
 
     def on_stop(self):
         self.running = False
-        self.root.quit()
+        self.root.withdraw()
 
 
 class PositionDialog(tkinter.Frame):
@@ -73,7 +74,7 @@ class PositionDialog(tkinter.Frame):
 
     def on_stop(self):
         self.running = False
-        self.root.quit()
+        self.root.withdraw()
 
 
 class Movement:
