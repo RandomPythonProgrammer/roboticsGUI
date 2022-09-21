@@ -29,6 +29,7 @@ class Direction(Enum):
 class FunctionDialog(tkinter.Tk):
     def __init__(self, write: Connection):
         super(FunctionDialog, self).__init__()
+        self.protocol("WM_DELETE_WINDOW", self.on_stop)
         self.write = write
         self.func_label = tkinter.Label(text='Enter the name of the function to add:')
         self.func_label.pack()
@@ -60,6 +61,7 @@ class FunctionDialog(tkinter.Tk):
 class PositionDialog(tkinter.Tk):
     def __init__(self, write: Connection):
         super(PositionDialog, self).__init__()
+        self.protocol("WM_DELETE_WINDOW", self.on_stop)
         self.write = write
         self.pos_label = tkinter.Label(text='Position to travel to (x, y, rotation [optional]):')
         self.pos_label.pack()
