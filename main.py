@@ -1,13 +1,12 @@
 import json
 import math
 import os
-from enum import Enum
-
 import tkinter
-import _tkinter
-root = tkinter.Tk()
-root.withdraw()
+from enum import Enum
+from multiprocessing import Process, Pipe
+from multiprocessing.connection import Connection
 
+import _tkinter
 import pyglet
 from pyglet.window import key
 
@@ -27,10 +26,10 @@ class Direction(Enum):
     POSITIONAL = 10
 
 
-class FunctionDialog(tkinter.Frame):
-    def __init__(self, root: tkinter.Tk):
+class FunctionDialog(tkinter.Tk):
+    def __init__(self, write: Connection):
         super(FunctionDialog, self).__init__()
-        root.deiconify()
+        self.write = write
         self.func_label = tkinter.Label(text='Enter the name of the function to add:')
         self.func_label.pack()
         self.func_box = tkinter.Entry()
@@ -41,42 +40,48 @@ class FunctionDialog(tkinter.Frame):
         self.arg_box.pack()
         self.button = tkinter.Button(text="Add", command=self.on_stop)
         self.button.pack()
-        self.root = root
 
         self.func_box.focus()
 
-        root.title('Add Function')
+        self.title('Add Function')
         path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
-        root.iconphoto(False, tkinter.PhotoImage(file=path))
-        self.running = True
+        self.iconphoto(False, tkinter.PhotoImage(file=path))
 
     def on_stop(self):
-        self.running = False
-        self.root.withdraw()
+        self.write.send(self.func_box.get() + chr(23) + self.arg_box.get())
+        self.quit()
+
+    @classmethod
+    def run(cls, write: Connection):
+        dialog = cls(write)
+        dialog.mainloop()
 
 
-class PositionDialog(tkinter.Frame):
-    def __init__(self, root: tkinter.Tk):
+class PositionDialog(tkinter.Tk):
+    def __init__(self, write: Connection):
         super(PositionDialog, self).__init__()
-        root.deiconify()
+        self.write = write
         self.pos_label = tkinter.Label(text='Position to travel to (x, y, rotation [optional]):')
         self.pos_label.pack()
         self.pos_box = tkinter.Entry()
         self.pos_box.pack()
         self.button = tkinter.Button(text="Add", command=self.on_stop)
         self.button.pack()
-        self.root = root
 
         self.pos_box.focus()
 
-        root.title('Add Function')
+        self.title('Add Function')
         path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
-        root.iconphoto(False, tkinter.PhotoImage(file=path))
-        self.running = True
+        self.iconphoto(False, tkinter.PhotoImage(file=path))
 
     def on_stop(self):
-        self.running = False
-        self.root.withdraw()
+        self.write.send(self.pos_box.get())
+        self.quit()
+
+    @classmethod
+    def run(cls, write: Connection):
+        dialog = cls(write)
+        dialog.mainloop()
 
 
 class Movement:
@@ -109,7 +114,7 @@ class Movement:
                 if len(self.amount) == 2:
                     return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}"
                 elif len(self.amount) == 3:
-                    return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}, heading {round(self.amount[2], 4)}"
+                    return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}, heading {round(math.degrees(self.amount[2]), 4)}"
 
         elif self.action == ActionType.ROTATION:
             if self.amount > 0:
@@ -436,31 +441,31 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 )
 
             elif symbol == key.T and self.setup:
-                dialog = PositionDialog(root)
-                root.mainloop()
-                try:
-                    position = dialog.pos_box.get()
-                    if position:
-                        items = position.replace(" ", "").split(",")
-                        x = round(float(items[0]) / 39.37, 4)
-                        y = round(float(items[1]) / 39.37, 4)
-                        rx = self.field_size / 2 + x * self.pixel_per_meter
-                        ry = self.field_size / 2 + y * self.pixel_per_meter
-                        r = None
-                        if len(items) == 3:
-                            r = math.radians(float(items[2]))
+                read, write = Pipe()
+                process = Process(target=PositionDialog.run, args=(write,))
+                process.start()
+                process.join()
+                position = read.recv()
+                read.close()
+                write.close()
+                if position:
+                    items = position.replace(" ", "").split(",")
+                    x = round(float(items[0]) / 39.37, 4)
+                    y = round(float(items[1]) / 39.37, 4)
+                    rx = self.field_size / 2 + x * self.pixel_per_meter
+                    ry = self.field_size / 2 + y * self.pixel_per_meter
+                    r = None
+                    if len(items) == 3:
+                        r = math.radians(float(items[2]))
 
-                        self.robot.position = rx, ry
-                        self.add_movement(
-                            (x, y, r) if r is not None else (x, y),
-                            ActionType.MOVEMENT, Direction.POSITIONAL,
-                            (self.robot.position, self.robot.rotation)
-                        )
-                        if len(items) == 3:
-                            self.robot.rotation = (-float(items[2])) + 90
-                    root.destroy()
-                except _tkinter.TclError:
-                    pass
+                    self.robot.position = rx, ry
+                    self.add_movement(
+                        (x, y, r) if r is not None else (x, y),
+                        ActionType.MOVEMENT, Direction.POSITIONAL,
+                        (self.robot.position, self.robot.rotation)
+                    )
+                    if len(items) == 3:
+                        self.robot.rotation = (-float(items[2])) + 90
 
             elif symbol == key.M:
                 if self.mouse_pos_mode:
@@ -479,21 +484,21 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
             elif symbol == key.F and self.setup:
-                dialog = FunctionDialog(root)
-                root.mainloop()
-                try:
-                    func_name = dialog.func_box.get()
-                    arguments = dialog.arg_box.get()
-                    if func_name:
-                        self.add_movement(
-                            func_name.replace(' ', ''),
-                            ActionType.FUNCTION, Direction.VOID,
-                            (self.robot.position, self.robot.rotation),
-                            arguments
-                        )
-                    root.destroy()
-                except _tkinter.TclError:
-                    pass
+                read, write = Pipe()
+                process = Process(target=FunctionDialog.run, args=(write,))
+                process.start()
+                process.join()
+                func_name, arguments = tuple(read.recv().split(chr(23)))
+                read.close()
+                write.close()
+                if func_name:
+                    self.add_movement(
+                        func_name.replace(' ', ''),
+                        ActionType.FUNCTION, Direction.VOID,
+                        (self.robot.position, self.robot.rotation),
+                        arguments
+                    )
+
             elif symbol == key.C:
                 self.mode += 1
                 if self.mode > 2:
