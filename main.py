@@ -431,7 +431,6 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 )
 
             elif symbol == key.T and self.setup:
-                root = tkinter.Tk()
                 dialog = PositionDialog(root)
                 root.mainloop()
                 try:
@@ -475,7 +474,6 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
             elif symbol == key.F and self.setup:
-                root = tkinter.Tk()
                 dialog = FunctionDialog(root)
                 root.mainloop()
                 try:
@@ -516,6 +514,7 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
 
 if __name__ == '__main__':
+    root = tkinter.Tk()
     display = pyglet.canvas.Display().get_default_screen()
     x_mult, y_mult = display.width / 16, display.height / 9
     mult = round(min(x_mult, y_mult) * 0.75)
