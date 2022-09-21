@@ -47,7 +47,7 @@ class FunctionDialog(tkinter.Tk):
 
     def on_stop(self):
         self.write.send(self.func_box.get() + chr(23) + self.arg_box.get())
-        self.quit()
+        self.destroy()
 
     @classmethod
     def run(cls, write: Connection):
@@ -74,7 +74,7 @@ class PositionDialog(tkinter.Tk):
 
     def on_stop(self):
         self.write.send(self.pos_box.get())
-        self.quit()
+        self.destroy()
 
     @classmethod
     def run(cls, write: Connection):
