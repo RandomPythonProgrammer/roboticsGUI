@@ -5,8 +5,6 @@ import tkinter
 from enum import Enum
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
-
-import _tkinter
 import pyglet
 from pyglet.window import key
 
