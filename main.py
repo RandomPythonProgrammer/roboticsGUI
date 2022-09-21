@@ -30,6 +30,7 @@ class Direction(Enum):
 class FunctionDialog(tkinter.Frame):
     def __init__(self, root: tkinter.Tk):
         super(FunctionDialog, self).__init__()
+        root.deiconify()
         self.func_label = tkinter.Label(text='Enter the name of the function to add:')
         self.func_label.pack()
         self.func_box = tkinter.Entry()
@@ -57,6 +58,7 @@ class FunctionDialog(tkinter.Frame):
 class PositionDialog(tkinter.Frame):
     def __init__(self, root: tkinter.Tk):
         super(PositionDialog, self).__init__()
+        root.deiconify()
         self.pos_label = tkinter.Label(text='Position to travel to (x, y, rotation [optional]):')
         self.pos_label.pack()
         self.pos_box = tkinter.Entry()
