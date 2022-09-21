@@ -1,10 +1,12 @@
 import json
 import math
 import os
-import tkinter
 from enum import Enum
 
+import tkinter
 import _tkinter
+root = tkinter.Tk()
+
 import pyglet
 from pyglet.window import key
 
@@ -514,7 +516,6 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
 
 if __name__ == '__main__':
-    root = tkinter.Tk()
     display = pyglet.canvas.Display().get_default_screen()
     x_mult, y_mult = display.width / 16, display.height / 9
     mult = round(min(x_mult, y_mult) * 0.75)
