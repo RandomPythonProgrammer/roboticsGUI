@@ -5,6 +5,8 @@ import tkinter
 from enum import Enum
 
 import _tkinter
+root = tkinter.Tk()
+root.withdraw()
 import pyglet
 from pyglet.window import key
 
@@ -27,6 +29,7 @@ class Direction(Enum):
 class FunctionDialog(tkinter.Frame):
     def __init__(self, root: tkinter.Tk):
         super(FunctionDialog, self).__init__()
+        root.wm_deiconify()
         self.func_label = tkinter.Label(text='Enter the name of the function to add:')
         self.func_label.pack()
         self.func_box = tkinter.Entry()
@@ -48,12 +51,14 @@ class FunctionDialog(tkinter.Frame):
 
     def on_stop(self):
         self.running = False
+        self.root.withdraw()
         self.root.quit()
 
 
 class PositionDialog(tkinter.Frame):
     def __init__(self, root: tkinter.Tk):
         super(PositionDialog, self).__init__()
+        root.wm_deiconify()
         self.pos_label = tkinter.Label(text='Position to travel to (x, y, rotation [optional]):')
         self.pos_label.pack()
         self.pos_box = tkinter.Entry()
@@ -71,6 +76,7 @@ class PositionDialog(tkinter.Frame):
 
     def on_stop(self):
         self.running = False
+        self.root.withdraw()
         self.root.quit()
 
 
@@ -104,7 +110,7 @@ class Movement:
                 if len(self.amount) == 2:
                     return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}"
                 elif len(self.amount) == 3:
-                    return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}, heading {round(self.amount[2], 4)}"
+                    return f"line to {round(self.amount[0] * 39.37, 4)}, {round(self.amount[1] * 39.37, 4)}, heading {round(math.degrees(self.amount[2]), 4)}"
 
         elif self.action == ActionType.ROTATION:
             if self.amount > 0:
@@ -431,7 +437,6 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 )
 
             elif symbol == key.T and self.setup:
-                root = tkinter.Tk()
                 dialog = PositionDialog(root)
                 root.mainloop()
                 try:
@@ -454,7 +459,6 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                         )
                         if len(items) == 3:
                             self.robot.rotation = (-float(items[2])) + 90
-                    root.destroy()
                 except _tkinter.TclError:
                     pass
 
@@ -475,7 +479,6 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 self.add_movement(.1, ActionType.SLEEP, Direction.VOID, (position, angle))
 
             elif symbol == key.F and self.setup:
-                root = tkinter.Tk()
                 dialog = FunctionDialog(root)
                 root.mainloop()
                 try:
@@ -488,7 +491,6 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                             (self.robot.position, self.robot.rotation),
                             arguments
                         )
-                    root.destroy()
                 except _tkinter.TclError:
                     pass
             elif symbol == key.C:
