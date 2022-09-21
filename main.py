@@ -144,7 +144,7 @@ class Movement:
                 if len(self.amount) == 2:
                     return f".lineTo(new Vector2d({self.amount}))"
                 elif len(self.amount) == 3:
-                    return f".lineToLinearHeading(new Pose2d({self.amount}))"
+                    return f".lineToLinearHeading(new Pose2d{self.amount})"
 
         elif self.action == ActionType.ROTATION:
             return f".turn({-self.amount})"
