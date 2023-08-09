@@ -44,7 +44,7 @@ class FunctionDialog(tkinter.Tk):
         self.func_box.focus()
 
         self.title('Add Function')
-        path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
+        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.jpg')
         self.iconphoto(False, tkinter.PhotoImage(file=path))
 
     def on_stop(self):
@@ -71,7 +71,7 @@ class PositionDialog(tkinter.Tk):
         self.pos_box.focus()
 
         self.title('Add Function')
-        path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
+        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.jpg')
         self.iconphoto(False, tkinter.PhotoImage(file=path))
 
     def on_stop(self):
@@ -171,7 +171,8 @@ class Application(pyglet.window.Window):
         with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as config:
             self.settings = json.load(config)
         self.set_caption("RoboticsGUI")
-        path = os.path.join(os.path.dirname(__file__), 'resources', 'icon.png')
+        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.jpg')
+        print(path)
         self.set_icon(pyglet.image.load(path))
 
         # initialize field variables
