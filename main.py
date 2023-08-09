@@ -5,8 +5,6 @@ import tkinter
 from enum import Enum
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
-
-import _tkinter
 import pyglet
 from pyglet.window import key
 
@@ -49,7 +47,7 @@ class FunctionDialog(tkinter.Tk):
 
     def on_stop(self):
         self.write.send(self.func_box.get() + chr(23) + self.arg_box.get())
-        self.quit()
+        self.destroy()
 
     @classmethod
     def run(cls, write: Connection):
@@ -76,7 +74,7 @@ class PositionDialog(tkinter.Tk):
 
     def on_stop(self):
         self.write.send(self.pos_box.get())
-        self.quit()
+        self.destroy()
 
     @classmethod
     def run(cls, write: Connection):
@@ -146,7 +144,7 @@ class Movement:
                 if len(self.amount) == 2:
                     return f".lineTo(new Vector2d({self.amount}))"
                 elif len(self.amount) == 3:
-                    return f".lineToLinearHeading(new Pose2d({self.amount}))"
+                    return f".lineToLinearHeading(new Pose2d{self.amount})"
 
         elif self.action == ActionType.ROTATION:
             return f".turn({-self.amount})"
