@@ -5,5 +5,17 @@
   "robot_turn_speed": 45,
   "font_size": 16,
   "lines": [
+    {
+      "length": 12,
+      "angle": 0,
+      "width": 2,
+      "color": [255, 0, 255]
+    },
+    {
+      "length": 24,
+      "angle": 180,
+      "width": 2,
+      "color": [0, 0, 255]
+    }
   ]
 }

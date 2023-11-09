@@ -2,9 +2,11 @@ import json
 import math
 import os
 import tkinter
+import tkinter.messagebox
 from enum import Enum
 from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
+
 import pyglet
 from pyglet.window import key
 
@@ -42,7 +44,7 @@ class FunctionDialog(tkinter.Tk):
         self.func_box.focus()
 
         self.title('Add Function')
-        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.jpg')
+        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.png')
         self.iconphoto(False, tkinter.PhotoImage(file=path))
 
     def on_stop(self):
@@ -69,7 +71,7 @@ class PositionDialog(tkinter.Tk):
         self.pos_box.focus()
 
         self.title('Add Function')
-        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.jpg')
+        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.png')
         self.iconphoto(False, tkinter.PhotoImage(file=path))
 
     def on_stop(self):
@@ -169,7 +171,7 @@ class Application(pyglet.window.Window):
         with open(os.path.join(os.path.dirname(__file__), 'config.json'), 'r') as config:
             self.settings = json.load(config)
         self.set_caption("RoboticsGUI")
-        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.jpg')
+        path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.png')
         print(path)
         self.set_icon(pyglet.image.load(path))
 
@@ -250,7 +252,7 @@ class Application(pyglet.window.Window):
     def calculate_mouse_position(self):
         x, y = self.mouse_pos
         return round((x - self.field_size / 2) / self.pixel_per_meter * 39.37, 4), \
-               round((y - self.field_size / 2) / self.pixel_per_meter * 39.37, 4)
+            round((y - self.field_size / 2) / self.pixel_per_meter * 39.37, 4)
 
     def on_update(self, dt: float):
         angle = self.robot.rotation
@@ -343,7 +345,7 @@ class Application(pyglet.window.Window):
                     circle.position = self.robot.position
                     circle.draw()
             for line in self.settings['lines']:
-                self.line_to(line['length'], line['angle'], line['width'], tuple(line['color'])).draw()
+                self.line_to(line['length'] / 39.37, line['angle'], line['width'], tuple(line['color'])).draw()
         self.foregroundBatch.draw()
         if self.mouse_pos_mode:
             self.position_label.text = f"Mouse Position: {self.calculate_mouse_position()}"
@@ -411,12 +413,11 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
 
         else:
             if symbol == key.P and modifiers & key.MOD_ACCEL:
-                try:
-                    line = "-" * os.get_terminal_size().columns
-                except OSError:
-                    line = "-" * 100
-
-                print(line + "\n" + self.get_code() + "\n" + line)
+                code = "\n" + self.get_code() + "\n"
+                root = tkinter.Tk()
+                root.withdraw()
+                tkinter.messagebox.showinfo('generated code', code)
+                print(code)
 
             elif symbol == key.Z and modifiers & key.MOD_ACCEL:
                 if len(self.movements) > 0:
