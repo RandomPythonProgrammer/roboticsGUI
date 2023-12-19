@@ -8,6 +8,7 @@ from multiprocessing import Process, Pipe
 from multiprocessing.connection import Connection
 
 import pyglet
+import pyperclip
 from pyglet.window import key
 
 
@@ -172,7 +173,6 @@ class Application(pyglet.window.Window):
             self.settings = json.load(config)
         self.set_caption("RoboticsGUI")
         path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.png')
-        print(path)
         self.set_icon(pyglet.image.load(path))
 
         # initialize field variables
@@ -416,8 +416,11 @@ TrajectorySequence trajectory = drive.trajectorySequenceBuilder(drive.getPoseEst
                 code = "\n" + self.get_code() + "\n"
                 root = tkinter.Tk()
                 root.withdraw()
-                tkinter.messagebox.showinfo('generated code', code)
+                path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'resources', 'icon.png')
+                root.iconphoto(False, tkinter.PhotoImage(file=path))
+                tkinter.messagebox.showinfo('Code Copied!', code, type=tkinter.messagebox.OK)
                 print(code)
+                pyperclip.copy(code)
 
             elif symbol == key.Z and modifiers & key.MOD_ACCEL:
                 if len(self.movements) > 0:
